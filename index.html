@@ -115,6 +115,27 @@ details.report summary { cursor: pointer; font-weight: 700; color: var(--navy2) 
 .rform label { display: grid; gap: 2px; font-size: 12.5px; color: var(--muted) }
 @media (prefers-reduced-motion: reduce) { .livebar img { animation: none } }
 
+/* 조회 */
+.qbar { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; padding-top: 14px; border-top: 1px solid var(--line) }
+button.go-q { font: 700 16px var(--f-body); background: var(--navy2); color: #fff; border: 0; border-radius: 10px; padding: 12px 28px; cursor: pointer }
+button.go-q:hover { background: var(--navy) }
+.stale { display: flex; gap: 10px; align-items: center; padding: 10px 14px; border-radius: 10px; background: var(--warn-soft); color: var(--warn); font-weight: 700; font-size: 14px }
+.stale button { font: 700 13px var(--f-body); background: var(--warn); color: #fff; border: 0; border-radius: 7px; padding: 6px 12px; cursor: pointer }
+.results { display: flex; flex-direction: column; gap: 20px }
+.results[hidden] { display: none }
+small.opt { font-weight: 400; color: var(--muted) }
+.qres .pick-need { color: var(--bad); font-weight: 700 }
+
+/* 사용 통계 */
+.stats { margin-left: auto; position: relative; align-self: start }
+.sbadge { display: flex; gap: 12px; font: 500 12.5px var(--f-body); color: var(--muted); background: var(--paper); border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; cursor: pointer }
+.sbadge b { color: var(--ink); font-family: var(--f-mono) }
+.sbadge b.hot { color: var(--bad) }
+.spanel { position: absolute; right: 0; top: calc(100% + 6px); z-index: 20; width: min(440px, calc(100vw - 32px)); background: var(--paper); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,.15); padding: 12px 14px; display: grid; gap: 8px; font-size: 13px }
+.spanel table { min-width: 0; font-size: 12.5px }
+.spanel td, .spanel th { padding: 4px 6px }
+@media (max-width: 760px) { .stats { margin-left: 0 } .spanel { left: 0; right: auto } }
+
 /* 이동 방식 선택 */
 fieldset.seg { border: 0; margin: 0; padding: 0; display: grid; gap: 4px; min-width: 0 }
 fieldset.seg legend { font-size: 12.5px; color: var(--muted); font-weight: 500; padding: 0; margin-bottom: 4px }
@@ -171,6 +192,7 @@ label.chk input { width: 18px; height: 18px; accent-color: var(--m-meal) }
 label.f.inline { min-width: 150px }
 .lunchgrid { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 16px; align-items: start }
 .lmap { background: var(--mapbg); border-radius: 8px }
+.lkmap { width: 100%; height: 380px; border-radius: 8px; overflow: hidden; min-width: 0 }
 .lmap svg { min-width: 340px }
 .foods { display: grid; gap: 8px }
 .food { display: grid; gap: 6px; padding: 10px 12px; border-radius: 8px; background: var(--bg); box-shadow: 0 0 0 1px var(--line) }
@@ -261,9 +283,16 @@ button.copy:hover { background: var(--navy) }
         <img src="kiji.png" alt="">
       </div>
       <div class="bname">
-        <span class="eyebrow">(주)케이지엔지니어링종합건축사사무소 · 출장 도우미 · 시연판</span>
+        <span class="eyebrow">(주)케이지엔지니어링종합건축사사무소 · 출장 도우미<span id="demoTag"> · 시연판</span></span>
         <h1 class="logo">키지<span>GO</span></h1>
         <p class="tag">회의 시각만 넣으면, 출발 시각부터 경로·점심·주차·예약까지</p>
+      </div>
+      <div class="stats" id="statsBox" hidden>
+        <button type="button" class="sbadge" id="statsBtn" aria-expanded="false">
+          <span>오늘 방문 <b id="stVisit">-</b></span>
+          <span>대중교통 TMAP <b id="stTmap">-</b>/10</span>
+        </button>
+        <div class="spanel" id="statsPanel" hidden></div>
       </div>
     </div>
     <span class="demo">⚠ 시간표·소요시간·주차장·식당·요금은 화면 설명용 예시 값입니다. 실제 정보와 다릅니다.</span>
@@ -289,12 +318,12 @@ button.copy:hover { background: var(--navy) }
       </div>
       <div class="f place">
         <label for="q">회의 장소</label>
-        <div class="qrow"><input id="q" type="search" placeholder="예: 포항시청" autocomplete="off"><button type="button" id="qbtn">검색</button></div>
+        <div class="qrow"><input id="q" type="search" placeholder="예: 포항시청 → 검색 → 목록에서 선택" autocomplete="off"><button type="button" id="qbtn">검색</button></div>
         <div class="qres" id="qres"></div>
         <select id="dest" hidden aria-hidden="true" tabindex="-1"></select>
       </div>
-      <label class="f" for="dept">방문 부서
-        <input id="dept" type="text" list="deptList" placeholder="예: 대중교통과 (모르면 비워 두기)" autocomplete="off">
+      <label class="f" for="dept">방문 부서 <small class="opt">(모르면 비워 두기)</small>
+        <input id="dept" type="text" list="deptList" placeholder="예: 대중교통과" autocomplete="off">
         <datalist id="deptList"></datalist>
       </label>
       <label class="f" for="date">회의 날짜
@@ -323,8 +352,15 @@ button.copy:hover { background: var(--navy) }
       </label>
       <span class="note" id="lunchNote"></span>
     </div>
+    <div class="qbar">
+      <button type="button" class="go-q" id="goQuery">🔍 조회</button>
+      <span class="note" id="qMsg" aria-live="polite">출발지·회의 장소·날짜·시각을 정한 뒤 조회를 눌러 주세요</span>
+    </div>
   </section>
 
+  <div class="stale" id="staleBar" hidden>조건이 바뀌었습니다. <button type="button" id="reQuery">다시 조회</button></div>
+
+  <div id="results" class="results" hidden>
   <section aria-label="수단 비교">
     <div class="modes" id="modes"></div>
   </section>
@@ -336,7 +372,7 @@ button.copy:hover { background: var(--navy) }
   </section>
 
   <section class="panel" aria-labelledby="h-map">
-    <h2 id="h-map">경로 지도 <small>시연판은 좌표 약도 · 운영판은 카카오맵 위에 표시</small></h2>
+    <h2 id="h-map">경로 지도 <small id="mapSub">시연판은 좌표 약도 · 운영판은 카카오맵 위에 표시</small></h2>
     <div class="maptabs" id="maptabs"></div>
     <div class="kmap" id="kmap" hidden></div>
     <div class="scroll" id="map"></div>
@@ -354,15 +390,17 @@ button.copy:hover { background: var(--navy) }
   <section class="panel" id="lunchBox" aria-labelledby="lunchTitle" hidden>
     <h2><span id="lunchTitle">점심 추천</span> <small id="lunchSub"></small></h2>
     <div class="lunchgrid">
+      <div class="lkmap" id="lunchKmap" hidden></div>
       <div class="scroll lmap" id="lunchMap"></div>
       <div class="foods" id="lunchList"></div>
     </div>
-    <p class="note">식당을 누르면 그 식당으로 일정이 다시 계산됩니다. 시연판의 식당·평점·블로그 수는 모두 가상의 예시입니다.</p>
+    <p class="note">식당을 누르면 그 식당으로 일정이 다시 계산됩니다. <span id="lunchDemoNote">시연판의 식당·평점·블로그 수는 모두 가상의 예시입니다.</span></p>
   </section>
 
   <section class="panel" aria-labelledby="destTitle">
     <h2><span id="destTitle">도착 안내</span> <small id="destSub">청사 배치·부서 위치는 예시 · 운영판은 사내 공유 DB로 관리</small></h2>
     <div class="destgrid">
+      <div class="lkmap" id="campusKmap" hidden></div>
       <div class="scroll lmap" id="campus"></div>
       <div class="destside">
         <div id="destInfo"></div>
@@ -406,6 +444,7 @@ button.copy:hover { background: var(--navy) }
     <ol class="bsteps" id="bookList"></ol>
     <div class="bprog" id="bookProg"></div>
   </section>
+  </div>
 </div>
 
 <script src="config.js"></script>
@@ -672,7 +711,7 @@ button.copy:hover { background: var(--navy) }
   PLACES.forEach(p => { const o = document.createElement("option"); o.value = p.id; o.textContent = p.name; $("dest").appendChild(o); });
 
   let selected = "rail";
-  const place = () => PLACES.find(p => p.id === $("dest").value) || PLACES[0];
+  const place = () => PLACES.find(p => p.id === $("dest").value) || null;
 
   // =====================================================================
   // 실시간 데이터 모드 (config.js에 apiBase가 있을 때)
@@ -697,8 +736,8 @@ button.copy:hover { background: var(--navy) }
   }
   // 위경도 → 기준점 대비 동·북 방향 m
   const toXY = (o, q) => ({ x: Math.round((q.lng - o.lng) * 111320 * Math.cos(o.lat * Math.PI / 180)), y: Math.round((q.lat - o.lat) * 110540) });
-  const LIVE_COLOR = { rail: "--m-rail", train: "--m-train", xbus: "--m-bus", air: "--m-air", city: "--m-sub" };
-  const LIVE_RISK = { rail: "매진이면 코레일 앱에서 예약대기 신청", train: "요금이 싸지만 소요시간이 김", xbus: "도로 정체에 따라 도착이 늦어질 수 있음", air: "수속 시간 필요, 기상에 따라 결항 가능", city: "환승이 많으면 시간이 늘어날 수 있음" };
+  const LIVE_COLOR = { rail: "--m-rail", train: "--m-train", xbus: "--m-bus", air: "--m-air", city: "--m-sub", k_subway: "--m-sub", k_bus: "--m-bus", k_bus_and_subway: "--m-sub" };
+  const LIVE_RISK = { k_subway: "지하철 배차·환승 대기는 몇 분 더 걸릴 수 있음", k_bus: "도로 정체에 따라 늦어질 수 있음", k_bus_and_subway: "환승 대기 시간이 더 걸릴 수 있음", rail: "매진이면 코레일 앱에서 예약대기 신청", train: "요금이 싸지만 소요시간이 김", xbus: "도로 정체에 따라 도착이 늦어질 수 있음", air: "수속 시간 필요, 기상에 따라 결항 가능", city: "환승이 많으면 시간이 늘어날 수 있음" };
 
   function liveCtx(p) {
     const mtg = toMin($("mtg").value || "10:00"), buffer = Math.max(0, +$("buffer").value || 0);
@@ -711,7 +750,7 @@ button.copy:hover { background: var(--navy) }
     if (LV.busy !== k) {
       LV.busy = k; liveBar("load");
       liveFetch(p, c).then(() => { LV.err = null; }).catch(e => { LV.err = e.message; })
-        .finally(() => { if (LV.busy === k) { LV.ready = k; LV.busy = null; liveBar(LV.err ? "err" : "off"); render(); } });
+        .finally(() => { if (LV.busy === k) { LV.ready = k; LV.busy = null; liveBar(LV.err ? "err" : "off"); $("qMsg").textContent = (c.travel === "transit" && LV.note) ? LV.note : ""; render(); } });
     }
     return false;
   }
@@ -734,6 +773,7 @@ button.copy:hover { background: var(--navy) }
     if (c.travel === "transit") {
       const base = await api("/transit", { from: ORIGIN, to: venue, arriveBy: dateHM(c, c.target) });
       LV.base[p.id] = base.options || [];
+      LV.note = base.note || (base.source === "kakao" ? "수도권 안 이동이라 카카오 대중교통으로 조회했습니다" : "수도권을 벗어나는 이동이라 TMAP(기차·고속버스 포함)으로 조회했습니다");
       LV.tx = {};
       if (c.lunchOn) {
         for (const o of LV.base[p.id]) {
@@ -746,7 +786,7 @@ button.copy:hover { background: var(--navy) }
           let shifted = null;
           if (lc.pick) {
             const extra = c.meal + lc.pick.walk * 2;
-            const r = await api("/transit", { from: ORIGIN, to: venue, arriveBy: dateHM(c, c.target - extra) }).catch(() => ({ options: [] }));
+            const r = await api("/transit", { from: ORIGIN, to: venue, arriveBy: dateHM(c, c.target - extra), silent: true }).catch(() => ({ options: [] }));
             shifted = (r.options || []).find(x => x.key === o.key) || null;
           }
           LV.tx[o.key] = { area, anchor, lc, shifted };
@@ -874,6 +914,35 @@ button.copy:hover { background: var(--navy) }
     kmapObj.relayout(); kmapObj.setBounds(bounds);
   }
 
+  // ----- 사용 통계 배지 (오른쪽 위) -----
+  async function loadStats() {
+    try {
+      const r = await fetch(CFG.apiBase.replace(/\/$/, "") + "/stats?days=30").then(x => x.json());
+      const t = r.today || {};
+      $("statsBox").hidden = false;
+      $("stVisit").textContent = t.visits || 0;
+      $("stTmap").textContent = t.tmap || 0;
+      $("stTmap").classList.toggle("hot", (t.tmap || 0) >= 8);
+      const rows = (r.rows || []).slice(0, 14);
+      const T = r.total || {};
+      const fmt = d => String(d || "").replace(/^(\d{4})(\d\d)(\d\d)$/, "$2/$3");
+      const over = (r.rows || []).filter(x => (x.tmap || 0) >= 10).length;
+      $("statsPanel").innerHTML =
+        '<b>최근 30일 사용 현황</b>' +
+        '<div class="note">방문 ' + (T.visits || 0) + '회 · 대중교통 조회 ' + (T.transit || 0) + '회 · 승용차 조회 ' + (T.car || 0) + '회</div>' +
+        '<div class="note">TMAP 실제 호출 ' + (T.tmap || 0) + '건 (저장 결과 재사용 ' + (T.tmapCached || 0) + '건) · 하루 무료 10건을 다 쓴 날 <b>' + over + '일</b></div>' +
+        '<div class="note">유료(0.88원/건) 환산: 한 달 약 ' + Math.round((T.tmap || 0) * 0.88).toLocaleString("ko-KR") + '원</div>' +
+        '<div class="tbl"><table><thead><tr><th>날짜</th><th style="text-align:right">방문</th><th style="text-align:right">대중교통</th><th style="text-align:right">승용차</th><th style="text-align:right">TMAP</th></tr></thead><tbody>' +
+        rows.map(x => '<tr><td class="t">' + fmt(x.day) + '</td><td class="n">' + (x.visits || 0) + '</td><td class="n">' + (x.transit || 0) + '</td><td class="n">' + (x.car || 0) + '</td><td class="n"' + ((x.tmap || 0) >= 10 ? ' style="color:var(--bad);font-weight:700"' : '') + '>' + (x.tmap || 0) + '</td></tr>').join("") +
+        '</tbody></table></div><div class="note">방문은 브라우저당 하루 1회로 셉니다.</div>';
+    } catch (e) { /* 통계는 없어도 동작에 지장 없음 */ }
+  }
+  $("statsBtn").addEventListener("click", () => {
+    const open = $("statsPanel").hidden;
+    $("statsPanel").hidden = !open; $("statsBtn").setAttribute("aria-expanded", String(open));
+    if (open) loadStats();
+  });
+
   // ----- 장소 검색: 회의 장소(dest) · 출발지(origin) -----
   // 실시간 모드: 카카오 장소 검색 / 예시 모드: 예시 장소 안에서만 찾음
   function chooseDest(r) {
@@ -883,11 +952,11 @@ button.copy:hover { background: var(--navy) }
       if (!PLACES.some(x => x.id === p.id)) { PLACES.push(p); const o = document.createElement("option"); o.value = p.id; o.textContent = p.name; $("dest").appendChild(o); }
     }
     $("dest").value = p.id; $("qres").innerHTML = ""; $("q").value = p.name;
-    $("dept").value = ""; lunchPick = {}; fillDepts(); render();
+    $("dept").value = ""; lunchPick = {}; fillDepts(); condChanged();
   }
   function chooseOrigin(r) {
     ORIGIN = { name: r.name, lat: r.lat, lng: r.lng };
-    $("ores").innerHTML = ""; $("oq").value = r.label || r.name; renderFavs(); render();
+    $("ores").innerHTML = ""; $("oq").value = r.label || r.name; renderFavs(); condChanged();
   }
 
   // ----- 자주 쓰는 출발지 (이 PC 브라우저에만 저장) -----
@@ -1007,10 +1076,38 @@ button.copy:hover { background: var(--navy) }
     return { leave: best, legs, walk: park.walk, total: drive + tail, slack: target - end, cost: m.cost, transfers: 0, drive };
   }
 
+  // 조회 상태: 조회를 누르기 전에는 결과를 감추고, 조회 뒤 조건이 바뀌면 '다시 조회' 안내
+  let queried = false, dirty = false;
+  function condChanged() {
+    if (!queried) return;
+    dirty = true; $("staleBar").hidden = false;
+  }
+  function runQuery() {
+    const msg = t => { $("qMsg").textContent = t; };
+    const qv = $("q").value.trim();
+    if (!place()) {
+      if (qv) { searchPlace(qv, "dest"); msg("회의 장소를 아래 목록에서 하나 골라 주세요"); }
+      else { msg("회의 장소를 입력하고 검색해 주세요"); $("q").focus(); }
+      return;
+    }
+    const ov = $("oq").value.trim();
+    if (ov && ov !== ORIGIN.name && !loadFavs().some(f => (f.label || f.name) === ov && sameSpot(f, ORIGIN))) {
+      searchPlace(ov, "origin"); msg("출발지를 아래 목록에서 하나 골라 주세요"); return;
+    }
+    if (!$("date").value || !$("mtg").value) { msg("회의 날짜와 시각을 정해 주세요"); return; }
+    msg("");
+    queried = true; dirty = false; $("staleBar").hidden = true;
+    if (LIVE) setTimeout(loadStats, 4000);
+    render();
+    $("results").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+  }
   function render() {
     const p = place();
-    if (!p) return;
-    if (p.live && !liveReady(p)) return;   // 실시간 데이터를 받는 중이면 끝난 뒤 다시 그림
+    $("results").hidden = !queried || !p;
+    if (!queried || !p) return;
+    if (p.live && !liveReady(p)) { $("results").hidden = true; return; }   // 실시간 데이터를 받는 중이면 끝난 뒤 다시 그림
+    // 지금 그리는 결과는 현재 조건 기준이므로 '다시 조회' 안내를 닫음
+    dirty = false; $("staleBar").hidden = true;
     const mtg = toMin($("mtg").value || "10:00");
     const buffer = Math.max(0, +$("buffer").value || 0);
     const target = mtg - buffer;
@@ -1313,7 +1410,49 @@ button.copy:hover { background: var(--navy) }
       : (C.registered ? "사내 공유 DB 등록 정보" : "아직 등록된 청사 정보가 없습니다 · 아래에서 부서 위치를 제보해 주세요");
   }
 
+  // 도착 안내 지도: 실시간 모드에서는 카카오맵 (회의장 · 주변 주차장 · 등록된 건물)
+  let cmapObj = null, cOverlays = [];
+  function drawCampusKakao(p, target, d, parks, pk) {
+    const K = window.kakao.maps, box = $("campusKmap");
+    box.hidden = false; $("campus").hidden = true;
+    const venue = new K.LatLng(p.lat, p.lng);
+    if (!cmapObj) cmapObj = new K.Map(box, { center: venue, level: 3 });
+    cmapObj.relayout();
+    cOverlays.forEach(o => o.setMap(null)); cOverlays = [];
+    const add = o => { o.setMap(cmapObj); cOverlays.push(o); return o; };
+    const bounds = new K.LatLngBounds(); bounds.extend(venue);
+    const navy = css("--navy2"), red = css("--bad"), park = css("--m-park");
+    // 등록된 청사라면 건물 위치 (x·y는 회의장 기준 m)
+    const ll = (x, y) => new K.LatLng(p.lat + y / 110540, p.lng + x / (111320 * Math.cos(p.lat * Math.PI / 180)));
+    const tgt = p.campus.registered ? ll(target.x, target.y) : venue;
+    if (p.campus.registered) p.campus.buildings.forEach(b => {
+      const on = b.id === target.id, pos = ll(b.x, b.y); bounds.extend(pos);
+      add(new K.CustomOverlay({ position: pos, yAnchor: 0.5, zIndex: on ? 4 : 2,
+        content: '<div style="background:' + (on ? navy : "#fff") + ';color:' + (on ? "#fff" : "#15213a") + ';font:700 12px sans-serif;padding:4px 8px;border-radius:5px;border:1px solid ' + navy + ';white-space:nowrap">' + esc(b.name) + '</div>' }));
+    });
+    // 도착 표시
+    const lbl = d.n !== "부서 미지정" && !d.unknown ? d.n + " · " + d.floor : p.name;
+    add(new K.CustomOverlay({ position: tgt, yAnchor: 2.2, zIndex: 6,
+      content: '<div style="background:' + red + ';color:#fff;font:700 12px sans-serif;padding:4px 10px;border-radius:999px;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.3)">📍 ' + esc(lbl) + '</div>' }));
+    // 주차장
+    parks.forEach(q => {
+      if (!isFinite(q.lat)) return;
+      const pos = new K.LatLng(q.lat, q.lng), on = pk && q.name === pk.name;
+      bounds.extend(pos);
+      const el = document.createElement("div");
+      el.style.cssText = "display:flex;align-items:center;gap:4px;cursor:pointer;transform:translate(-13px,-13px)";
+      el.innerHTML = '<span style="width:26px;height:26px;border-radius:6px;display:grid;place-items:center;font:700 14px sans-serif;color:' + (on ? "#fff" : park) + ';background:' + (on ? park : "#fff") + ';border:2px solid ' + park + ';box-shadow:0 1px 4px rgba(0,0,0,.3)">P</span>' +
+        '<span style="background:#fff;color:#15213a;font:' + (on ? 700 : 500) + ' 12px sans-serif;padding:2px 6px;border-radius:4px;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.25)">' + esc(q.name) + '</span>';
+      el.addEventListener("click", () => { parkSel[p.id] = q.name; render(); });
+      add(new K.CustomOverlay({ position: pos, content: el, xAnchor: 0, yAnchor: 0, zIndex: on ? 5 : 3 }));
+      if (on) add(new K.Polyline({ path: [pos, tgt], strokeWeight: 4, strokeColor: css("--m-walk"), strokeOpacity: .9, strokeStyle: "shortdot" }));
+    });
+    if (parks.length || p.campus.registered) cmapObj.setBounds(bounds, 50, 50, 50, 50);
+    else { cmapObj.setCenter(venue); if (cmapObj.setLevel) cmapObj.setLevel(3); }
+  }
   function drawCampus(p, target, d, parks, pk) {
+    if (KREADY && p.live && isFinite(p.lat)) { try { drawCampusKakao(p, target, d, parks, pk); return; } catch (e) { console.warn("도착 지도", e); } }
+    $("campusKmap").hidden = true; $("campus").hidden = false;
     const C = p.campus, W = 520, H = 360;
     // 화면에 담을 점: 건물 모서리 + 정문 + 선택 주차장
     const pts = [];
@@ -1401,7 +1540,44 @@ button.copy:hover { background: var(--navy) }
     drawLunchMap(lc, inR, out);
   }
 
+  // 점심 지도: 실시간 모드에서는 카카오맵, 예시 모드에서는 약도
+  let lmapObj = null, lOverlays = [];
+  function drawLunchKakao(lc, inR, out) {
+    const K = window.kakao.maps, box = $("lunchKmap");
+    const A = lc.A._anchor, raw = lc.A._raw || [];
+    const pos = i => { const r = raw.find(x => x.n === i.n); return r && isFinite(r.lat) ? new K.LatLng(r.lat, r.lng) : null; };
+    box.hidden = false; $("lunchMap").hidden = true;
+    const center = new K.LatLng(A.lat, A.lng);
+    if (!lmapObj) lmapObj = new K.Map(box, { center, level: travel === "car" ? 6 : 4 });
+    lmapObj.relayout();
+    lOverlays.forEach(o => o.setMap(null)); lOverlays = [];
+    const add = o => { o.setMap(lmapObj); lOverlays.push(o); return o; };
+    const meal = css("--m-meal"), navy = css("--navy2"), gray = css("--mapcity");
+    // 권역 원
+    add(new K.Circle({ center, radius: lc.radius, strokeWeight: 2, strokeColor: meal, strokeOpacity: .8, strokeStyle: "dash", fillColor: meal, fillOpacity: .08 }));
+    // 기준점 (역·터미널·회의장)
+    add(new K.CustomOverlay({ position: center, yAnchor: 0.5, zIndex: 3,
+      content: '<div style="background:' + navy + ';color:#fff;font:700 12px sans-serif;padding:4px 9px;border-radius:6px;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.3)">' + esc(A.name) + '</div>' }));
+    const bounds = new K.LatLngBounds(); bounds.extend(center);
+    // 선택한 식당까지 선
+    if (lc.pick) { const pp = pos(lc.pick); if (pp) add(new K.Polyline({ path: [center, pp], strokeWeight: 4, strokeColor: travel === "car" ? css("--m-car") : css("--m-walk"), strokeOpacity: .9, strokeStyle: travel === "car" ? "solid" : "shortdot" })); }
+    // 식당 표시
+    inR.concat(out).forEach((i, idx) => {
+      const pp = pos(i); if (!pp) return;
+      const off = !i.ok, on = lc.pick && lc.pick.n === i.n;
+      bounds.extend(pp);
+      const el = document.createElement("div");
+      el.style.cssText = "display:flex;align-items:center;gap:4px;cursor:" + (off ? "default" : "pointer") + ";transform:translate(-13px,-13px)";
+      el.innerHTML = '<span style="width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font:700 12px monospace;color:#fff;background:' + (off ? gray : meal) + ';border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35)' + (on ? ";outline:3px solid " + meal : "") + '">' + (off ? "–" : idx + 1) + '</span>' +
+        '<span style="background:#fff;color:#15213a;font:' + (on ? 700 : 500) + ' 12px sans-serif;padding:2px 6px;border-radius:4px;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.25)">' + esc(i.n) + '</span>';
+      if (!off) el.addEventListener("click", () => { lunchPick[lc.area] = i.n; render(); });
+      add(new K.CustomOverlay({ position: pp, content: el, xAnchor: 0, yAnchor: 0, zIndex: on ? 5 : 4 }));
+    });
+    lmapObj.setBounds(bounds, 40, 40, 40, 40);
+  }
   function drawLunchMap(lc, inR, out) {
+    if (KREADY && lc.A && lc.A._anchor) { try { drawLunchKakao(lc, inR, out); return; } catch (e) { console.warn("점심 지도", e); } }
+    $("lunchKmap").hidden = true; $("lunchMap").hidden = false;
     const car = travel === "car", W = 460, H = 380, cx = W / 2, cy = H / 2 + 6;
     const shown = inR.concat(out);
     const reach = Math.max(lc.radius * 1.12, ...shown.map(i => i.dist * 1.08));
@@ -1538,20 +1714,18 @@ button.copy:hover { background: var(--navy) }
     lunchOn = e.target.checked;
     // 오전 회의에 점심을 넣으면 의미가 없으므로 오후 2시로 맞춤
     if (lunchOn && toMin($("mtg").value || "10:00") < toMin("13:00")) { $("mtg").value = "14:00"; }
-    syncLunchUI(); render();
+    syncLunchUI(); condChanged();
   });
-  ["lunchMin", "lunchWhere", "lunchBudget"].forEach(id => $(id).addEventListener("input", render));
+  ["lunchMin", "lunchWhere", "lunchBudget"].forEach(id => $(id).addEventListener("input", condChanged));
   // 방문 부서 입력칸의 자동완성 목록 (등록된 부서만)
   function fillDepts() {
     const p = place();
     const list = p && p.campus ? p.campus.depts.filter(d => d.n !== "부서 미지정") : [];
     $("deptList").innerHTML = list.map(d => '<option value="' + esc(d.n) + '">' + esc(bldOf(p, d).name.replace(/\(.*\)/, "") + " " + d.floor) + '</option>').join("");
-    $("dept").placeholder = list.length ? "예: " + list[0].n + " (모르면 비워 두기)" : "부서 이름 입력 (모르면 비워 두기)";
+    $("dept").placeholder = list.length ? "예: " + list[0].n : "예: 대중교통과";
   }
   fillDepts();
-  $("dept").addEventListener("change", render);
-  // 자동완성에서 고르면 바로 반영
-  $("dept").addEventListener("input", () => { const p = place(); if (p && p.campus && p.campus.depts.some(d => d.n === $("dept").value)) render(); });
+  $("dept").addEventListener("input", condChanged);
   // 장소 검색 칸 (출발지 · 회의 장소)
   const goSearch = which => { const v = $(which === "origin" ? "oq" : "q").value.trim(); if (v) searchPlace(v, which); };
   $("qbtn").addEventListener("click", () => goSearch("dest"));
@@ -1560,14 +1734,19 @@ button.copy:hover { background: var(--navy) }
   $("oq").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); goSearch("origin"); } });
   $("oq").value = ORIGIN.name;
   renderFavs();
-  if (place()) $("q").value = place().name;
+  // 회의 장소 칸 글자를 바꾸면 기존 선택을 풀고 다시 검색·선택하게 함
+  $("q").addEventListener("input", () => { const p = place(); if (p && $("q").value.trim() !== p.name) { $("dest").value = ""; condChanged(); } });
+  $("oq").addEventListener("input", () => { $("ores").innerHTML = ""; });
+  // ===== 조회 =====
+  $("goQuery").addEventListener("click", runQuery);
+  $("reQuery").addEventListener("click", runQuery);
+  $("dest").value = ""; $("q").value = "";
   $("goBook").addEventListener("click", () => {
     bookOpen = true; render();
     if (!$("bookBox").hidden) $("bookBox").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
   });
-  document.querySelectorAll('input[name="travel"]').forEach(r => r.addEventListener("change", () => { travel = r.value; selected = travel === "car" ? "car0" : "rail"; syncLunchUI(); render(); }));
-  $("dest").addEventListener("change", render);
-  ["mtg", "buffer", "date"].forEach(id => $(id).addEventListener("input", render));
+  document.querySelectorAll('input[name="travel"]').forEach(r => r.addEventListener("change", () => { travel = r.value; selected = travel === "car" ? "car0" : "rail"; syncLunchUI(); condChanged(); }));
+  ["mtg", "buffer", "date"].forEach(id => $(id).addEventListener("input", condChanged));
   // 부서 위치 제보 (실시간 모드)
   $("rSend").addEventListener("click", async () => {
     const p = place(), dept = $("rDept").value.trim();
@@ -1583,8 +1762,17 @@ button.copy:hover { background: var(--navy) }
   if (LIVE) {
     PLACES.length = 0; $("dest").innerHTML = "";
     document.querySelector(".brandhead .demo").textContent = "실시간 데이터 연결 · 예약·결제는 각 공식 사이트에서 직접 진행";
+    // 실제 버전에서는 '시연판' 문구 숨김
+    ["demoTag", "lunchDemoNote"].forEach(id => { const e = $(id); if (e) e.hidden = true; });
+    $("mapSub").textContent = "카카오맵 · 탭을 눌러 수단별 경로 보기";
+    // 방문 기록 (이 브라우저에서 하루 1회) + 통계 표시
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      if (localStorage.getItem("kijigo.visit") !== today) { api("/hit", { t: Date.now() }).catch(() => {}); localStorage.setItem("kijigo.visit", today); }
+    } catch (e) { api("/hit", { t: Date.now() }).catch(() => {}); }
+    loadStats();
     // 회사 주소로 정확한 출발 위치 보정 후 첫 화면 계산
-    const start = () => searchPlace("포항시청", "dest", true);
+    const start = () => {};
     if (DEFAULT_ORIGIN.address) {
       api("/address?q=" + encodeURIComponent(DEFAULT_ORIGIN.address)).then(a => {
         if (a && isFinite(a.lat)) { DEFAULT_ORIGIN.lat = a.lat; DEFAULT_ORIGIN.lng = a.lng; if (ORIGIN.name === DEFAULT_ORIGIN.name) ORIGIN = { ...DEFAULT_ORIGIN }; renderFavs(); }
