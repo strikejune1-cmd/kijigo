@@ -24,7 +24,7 @@
   --m-wait: #d9dfea;
   --m-slack: #dff0e7;
   --mapbg: #f4f6f2; --mapgrid: #e2e6dd; --mapcity: #8b93a3;
-  --m-meal: #b2456a; --m-train: #9a3b3b; --m-air: #2b7bb9;
+  --m-meal: #b2456a; --m-walkline: #2e9d5b; --m-train: #9a3b3b; --m-air: #2b7bb9;
   --ok: #1d7a52; --ok-soft: #e3f3ea;
   --warn: #a76100; --warn-soft: #fbf0dc;
   --bad: #b3263a; --bad-soft: #fbe6e9;
@@ -36,14 +36,14 @@
   --bg: #0e1424; --paper: #161f33; --ink: #e4e9f3; --muted: #97a3ba; --line: #27324b;
   --navy: #8fb0ea; --navy2: #7a9cdc; --navy3: #5d80c2; --navy-soft: #1d2a46;
   --m-rail: #8fb0ea; --m-sub: #5d80c2; --m-bus: #e0a24a; --m-car: #4cbfb3; --m-walk: #7d879b; --m-park: #a98be0; --m-wait: #2a3550; --m-slack: #173326;
-  --mapbg: #121a2b; --mapgrid: #1f2a40; --mapcity: #6f7b92; --m-meal: #e0789c; --m-train: #e08585; --m-air: #6cb6ea;
+  --mapbg: #121a2b; --mapgrid: #1f2a40; --mapcity: #6f7b92; --m-meal: #e0789c; --m-walkline: #5cc98a; --m-train: #e08585; --m-air: #6cb6ea;
   --ok: #55c993; --ok-soft: #14301f; --warn: #f0b155; --warn-soft: #362812; --bad: #ff7d8d; --bad-soft: #3a1820;
   color-scheme: dark } }
 :root[data-theme="dark"] {
   --bg: #0e1424; --paper: #161f33; --ink: #e4e9f3; --muted: #97a3ba; --line: #27324b;
   --navy: #8fb0ea; --navy2: #7a9cdc; --navy3: #5d80c2; --navy-soft: #1d2a46;
   --m-rail: #8fb0ea; --m-sub: #5d80c2; --m-bus: #e0a24a; --m-car: #4cbfb3; --m-walk: #7d879b; --m-park: #a98be0; --m-wait: #2a3550; --m-slack: #173326;
-  --mapbg: #121a2b; --mapgrid: #1f2a40; --mapcity: #6f7b92; --m-meal: #e0789c; --m-train: #e08585; --m-air: #6cb6ea;
+  --mapbg: #121a2b; --mapgrid: #1f2a40; --mapcity: #6f7b92; --m-meal: #e0789c; --m-walkline: #5cc98a; --m-train: #e08585; --m-air: #6cb6ea;
   --ok: #55c993; --ok-soft: #14301f; --warn: #f0b155; --warn-soft: #362812; --bad: #ff7d8d; --bad-soft: #3a1820;
   color-scheme: dark }
 
@@ -132,6 +132,7 @@ small.opt { font-weight: 400; color: var(--muted) }
 .sbadge b { color: var(--ink); font-family: var(--f-mono) }
 .sbadge b.hot { color: var(--bad) }
 .spanel { position: absolute; right: 0; top: calc(100% + 6px); z-index: 20; width: min(440px, calc(100vw - 32px)); background: var(--paper); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,.15); padding: 12px 14px; display: grid; gap: 8px; font-size: 13px }
+.spanel[hidden] { display: none }
 .spanel table { min-width: 0; font-size: 12.5px }
 .spanel td, .spanel th { padding: 4px 6px }
 @media (max-width: 760px) { .stats { margin-left: 0 } .spanel { left: 0; right: auto } }
@@ -273,6 +274,9 @@ button.copy:hover { background: var(--navy) }
 .note { font-size: 12.5px; color: var(--muted) }
 
 @media (max-width: 760px) { .modes, .modes.two-col, .two { grid-template-columns: minmax(0, 1fr) } }
+.ln { display: inline-block; padding: 0 7px; border-radius: 9px; color: #fff; font-weight: 700; font-size: 12px; line-height: 19px; white-space: nowrap; vertical-align: 1px }
+.lines { display: flex; flex-wrap: wrap; gap: 3px; align-items: center; justify-content: flex-end }
+.lines .gt { color: var(--muted); font-size: 11px }
 </style>
 
 <div class="wrap">
@@ -289,8 +293,7 @@ button.copy:hover { background: var(--navy) }
       </div>
       <div class="stats" id="statsBox" hidden>
         <button type="button" class="sbadge" id="statsBtn" aria-expanded="false">
-          <span>오늘 방문 <b id="stVisit">-</b></span>
-          <span>대중교통 TMAP <b id="stTmap">-</b>/10</span>
+          <span>오늘 방문 <b id="stVisit">-</b> ▾</span>
         </button>
         <div class="spanel" id="statsPanel" hidden></div>
       </div>
@@ -335,18 +338,35 @@ button.copy:hover { background: var(--navy) }
       <label class="f" for="buffer">도착 후 여유 (분)
         <input id="buffer" type="number" min="0" max="120" step="5" value="15">
       </label>
+      <label class="f" for="carPref" id="carPrefWrap" hidden>경로 선호 <small class="opt">(장소별로 기억)</small>
+        <select id="carPref">
+          <option value="rec">추천 경로</option>
+          <option value="time">최소 시간</option>
+          <option value="dist">최단 거리</option>
+          <option value="free">무료도로 (통행료 회피)</option>
+        </select>
+      </label>
     </div>
     <div class="lunchrow">
-      <label class="chk" for="lunchOn"><input id="lunchOn" type="checkbox"> 🍴 회의 전 점심 포함</label>
-      <label class="f inline" for="lunchMin">점심 시간 (분)
-        <input id="lunchMin" type="number" min="20" max="120" step="10" value="60" disabled>
+      <label class="f inline" for="lunchMode">🍴 점심
+        <select id="lunchMode">
+          <option value="none">안 먹음</option>
+          <option value="before">회의 전에 먹기</option>
+          <option value="after">회의 끝나고 먹기</option>
+        </select>
+      </label>
+      <label class="f inline" for="mtgDur" id="mtgDurWrap" hidden>회의 시간 (분)
+        <input id="mtgDur" type="number" min="30" max="300" step="30" value="90">
+      </label>
+      <label class="f inline" for="lunchMin">점심 시간 (분, 오가는 시간 포함)
+        <input id="lunchMin" type="number" min="20" max="120" step="5" value="60" disabled>
       </label>
       <label class="f inline" for="lunchBudget">1인 예산 (원)
         <input id="lunchBudget" type="number" min="5000" max="50000" step="1000" value="15000" disabled>
       </label>
       <label class="f inline" for="lunchWhere">점심 장소
         <select id="lunchWhere" disabled>
-          <option value="arrive">도착역·터미널 근처</option>
+          <option value="arrive">역·터미널 근처</option>
           <option value="venue">회의장 근처</option>
         </select>
       </label>
@@ -357,8 +377,6 @@ button.copy:hover { background: var(--navy) }
       <span class="note" id="qMsg" aria-live="polite">출발지·회의 장소·날짜·시각을 정한 뒤 조회를 눌러 주세요</span>
     </div>
   </section>
-
-  <div class="stale" id="staleBar" hidden>조건이 바뀌었습니다. <button type="button" id="reQuery">다시 조회</button></div>
 
   <div id="results" class="results" hidden>
   <section aria-label="수단 비교">
@@ -455,21 +473,25 @@ button.copy:hover { background: var(--navy) }
   const PLACES = [
     { id: "pohang", name: "포항시청",
       air: { label: "항공", cost: 76000, arrive: null, book: "air",
-        pre: [["walk", 6, "사무실", "문정역"], ["sub", 55, "문정역", "김포공항", "지하철 8·9호선"], ["wait", 40, "김포공항", "김포공항", "탑승 수속"]],
+        pre: [["walk", 6, "사무실", "문정역"], ["sub", 6, "문정역", "석촌역", "8호선"], ["walk", 3, "석촌역", "석촌역", "환승"], ["sub", 46, "석촌역", "김포공항", "9호선 급행"], ["wait", 40, "김포공항", "김포공항", "탑승 수속"]],
         main: ["air", "김포공항", "포항경주공항"],
         post: [["bus", 35, "포항경주공항", "시청 정문", "택시"], ["walk", 3, "시청 정문", "포항시청 회의실"]],
         sched: [["07:30","08:30"],["11:55","12:55"],["17:40","18:40"]] },
       rail: { label: "KTX", cost: 52000, arrive: "station", book: "rail",
-        pre: [["walk", 6, "사무실", "문정역"], ["sub", 14, "문정역", "수서역", "지하철 8·3호선"], ["wait", 15, "수서역", "수서역", "승차 대기"]],
+        pre: [["walk", 6, "사무실", "문정역"], ["sub", 4, "문정역", "가락시장역", "8호선"], ["walk", 3, "가락시장역", "가락시장역", "환승"], ["sub", 7, "가락시장역", "수서역", "3호선"], ["wait", 15, "수서역", "수서역", "승차 대기"]],
         main: ["rail", "수서역", "포항역"],
         post: [["bus", 25, "포항역", "시청 정문", "택시"], ["walk", 3, "시청 정문", "포항시청 회의실"]],
         sched: [["05:15","07:40"],["05:55","08:20"],["06:25","08:52"],["07:00","09:24"],["07:35","09:58"],["08:10","10:35"],["08:45","11:10"],["09:20","11:45"],["10:00","12:25"],["10:40","13:05"],["11:20","13:45"]] },
       xbus: { label: "고속버스", cost: 34000, arrive: "terminal", book: "xbus",
-        pre: [["walk", 6, "사무실", "문정역"], ["sub", 32, "문정역", "강변역", "지하철 8·2호선"], ["walk", 5, "강변역", "동서울터미널"], ["wait", 15, "동서울터미널", "동서울터미널", "승차 대기"]],
+        pre: [["walk", 6, "사무실", "문정역"], ["sub", 10, "문정역", "잠실역", "8호선"], ["walk", 4, "잠실역", "잠실역", "환승"], ["sub", 18, "잠실역", "강변역", "2호선"], ["walk", 5, "강변역", "동서울터미널"], ["wait", 15, "동서울터미널", "동서울터미널", "승차 대기"]],
         main: ["xbus", "동서울터미널", "포항터미널"],
-        post: [["bus", 22, "포항터미널", "시청 앞", "시내버스"], ["walk", 6, "시청 앞", "포항시청 회의실"]],
+        post: [["bus", 22, "포항터미널", "시청 앞", "시내버스 200번"], ["walk", 6, "시청 앞", "포항시청 회의실"]],
         sched: [["05:00","09:10"],["06:00","10:10"],["06:30","10:40"],["07:00","11:10"],["08:00","12:10"],["09:00","13:10"],["10:00","14:10"]] },
       car: { label: "승용차", cost: 61000, from: "사무실", to: "포항시청",
+        routes: { rec: { via: ["중부고속도로", "영동고속도로", "중부내륙고속도로", "상주영천고속도로", "익산포항고속도로"], f: 1 },
+          time: { via: ["경부고속도로", "익산포항고속도로"], f: 0.97 },
+          dist: { via: ["중부고속도로", "중부내륙고속도로", "중앙고속도로", "국도 28호선"], f: 1.06 },
+          free: { via: ["국도 3호선", "국도 34호선", "국도 28호선"], f: 1.55 } },
         curve: [["04:00",215],["04:30",218],["05:00",225],["05:30",238],["06:00",252],["06:30",270],["07:00",292],["07:30",305],["08:00",298],["08:30",285],["09:00",270],["09:30",258],["10:00",250],["10:30",248],["11:00",250],["11:30",252],["12:00",255]],
         parkMin: 5,
         // x·y: 본관 중심 기준 동·북 방향 m (예시)
@@ -509,21 +531,25 @@ button.copy:hover { background: var(--navy) }
       } },
     { id: "daejeon", name: "대전시청",
       rail: { label: "KTX", cost: 24000, arrive: "station", book: "rail",
-        pre: [["walk", 6, "사무실", "문정역"], ["sub", 14, "문정역", "수서역", "지하철 8·3호선"], ["wait", 15, "수서역", "수서역", "승차 대기"]],
+        pre: [["walk", 6, "사무실", "문정역"], ["sub", 4, "문정역", "가락시장역", "8호선"], ["walk", 3, "가락시장역", "가락시장역", "환승"], ["sub", 7, "가락시장역", "수서역", "3호선"], ["wait", 15, "수서역", "수서역", "승차 대기"]],
         main: ["rail", "수서역", "대전역"],
-        post: [["sub", 18, "대전역", "시청역", "대전 1호선"], ["walk", 7, "시청역", "대전시청 회의실"]],
+        post: [["sub", 18, "대전역", "시청역", "대전1호선"], ["walk", 7, "시청역", "대전시청 회의실"]],
         sched: [["06:05","07:05"],["06:40","07:40"],["07:15","08:13"],["07:50","08:50"],["08:25","09:24"],["09:00","09:59"],["09:35","10:34"],["10:10","11:08"],["10:45","11:44"],["11:20","12:18"],["12:00","12:58"]] },
       train: { label: "무궁화호", cost: 12000, arrive: "station", book: "rail",
-        pre: [["walk", 6, "사무실", "문정역"], ["sub", 48, "문정역", "서울역", "지하철 8·2·4호선"], ["wait", 10, "서울역", "서울역", "승차 대기"]],
+        pre: [["walk", 6, "사무실", "문정역"], ["sub", 4, "문정역", "가락시장역", "8호선"], ["walk", 3, "가락시장역", "가락시장역", "환승"], ["sub", 25, "가락시장역", "충무로역", "3호선"], ["walk", 4, "충무로역", "충무로역", "환승"], ["sub", 12, "충무로역", "서울역", "4호선"], ["wait", 10, "서울역", "서울역", "승차 대기"]],
         main: ["train", "서울역", "대전역"],
-        post: [["sub", 18, "대전역", "시청역", "대전 1호선"], ["walk", 7, "시청역", "대전시청 회의실"]],
+        post: [["sub", 18, "대전역", "시청역", "대전1호선"], ["walk", 7, "시청역", "대전시청 회의실"]],
         sched: [["06:10","08:05"],["07:25","09:20"],["08:50","10:45"],["10:05","12:00"],["11:20","13:15"]] },
       xbus: { label: "고속버스", cost: 15000, arrive: "terminal", book: "xbus",
-        pre: [["walk", 6, "사무실", "문정역"], ["sub", 28, "문정역", "고속터미널역", "지하철 3호선"], ["walk", 6, "고속터미널역", "서울경부터미널"], ["wait", 15, "서울경부터미널", "서울경부터미널", "승차 대기"]],
+        pre: [["walk", 6, "사무실", "문정역"], ["sub", 4, "문정역", "가락시장역", "8호선"], ["walk", 3, "가락시장역", "가락시장역", "환승"], ["sub", 21, "가락시장역", "고속터미널역", "3호선"], ["walk", 6, "고속터미널역", "서울경부터미널"], ["wait", 15, "서울경부터미널", "서울경부터미널", "승차 대기"]],
         main: ["xbus", "서울경부터미널", "대전복합터미널"],
-        post: [["bus", 25, "대전복합터미널", "시청 앞", "시내버스"], ["walk", 5, "시청 앞", "대전시청 회의실"]],
+        post: [["bus", 25, "대전복합터미널", "시청 앞", "급행1번"], ["walk", 5, "시청 앞", "대전시청 회의실"]],
         sched: [["06:00","08:00"],["06:30","08:30"],["07:00","09:00"],["07:30","09:35"],["08:00","10:05"],["09:00","11:00"],["10:00","12:00"],["11:00","13:00"]] },
       car: { label: "승용차", cost: 28000, from: "사무실", to: "대전시청",
+        routes: { rec: { via: ["경부고속도로", "호남고속도로지선", "한밭대로"], f: 1 },
+          time: { via: ["경부고속도로", "호남고속도로지선", "한밭대로"], f: 1 },
+          dist: { via: ["경부고속도로", "국도 17호선", "계룡로"], f: 1.04 },
+          free: { via: ["국도 1호선", "국도 17호선", "계룡로"], f: 1.5 } },
         curve: [["05:00",112],["05:30",116],["06:00",124],["06:30",138],["07:00",155],["07:30",168],["08:00",162],["08:30",150],["09:00",138],["09:30",130],["10:00",125],["10:30",122],["11:00",124],["11:30",126],["12:00",128]],
         parkMin: 5,
         parks: [
@@ -611,9 +637,49 @@ button.copy:hover { background: var(--navy) }
     slack:{ name: "남는 시간", color: "--m-slack" }, meal: { name: "점심", color: "--m-meal" }
   };
 
+  // ===== 노선 이름·색 (지하철 몇 호선, GTX-A, 버스 번호) =====
+  const LINE_COLORS = [[/GTX-?A/i, "#9A6292"], [/GTX-?B/i, "#0E5FA6"], [/GTX-?C/i, "#2C6B2F"], [/신분당/, "#D4003B"], [/수인|분당/, "#F5A200"],
+    [/경의|중앙선/, "#77C4A3"], [/공항철도|공항/, "#0090D2"], [/경춘/, "#0C8E72"], [/경강/, "#0054A6"], [/서해/, "#8FC31F"], [/우이신설/, "#B7C452"],
+    [/신림/, "#6789CA"], [/김포골드/, "#A17800"], [/의정부/, "#FDA600"], [/에버라인|용인/, "#509F22"], [/인천\s?1/, "#7CA8D5"], [/인천\s?2/, "#ED8B00"],
+    [/대전/, "#007448"], [/대구/, "#D93F5C"], [/부산|동해선/, "#F06A00"], [/광주/, "#009088"],
+    [/(^|\D)1호선/, "#0052A4"], [/2호선/, "#00A84D"], [/3호선/, "#EF7C1C"], [/4호선/, "#00A5DE"], [/5호선/, "#996CAC"], [/6호선/, "#CD7C2F"],
+    [/7호선/, "#747F00"], [/8호선/, "#E6186C"], [/9호선/, "#BDB092"]];
+  const BUS_COLORS = [[/간선/, "#3D5BAB"], [/지선|마을/, "#5BB025"], [/광역|M\d|급행|직행|좌석/, "#E60012"], [/순환/, "#F2B70A"]];
+  // 서버·예시가 주는 노선 이름을 화면용으로 다듬음 (예: "수도권8호선" → "8호선", "간선:340" → "340번 간선")
+  function lineName(l) {
+    let n = String(l.n || "").trim();
+    if (!["sub", "bus"].includes(l.k) || !n) return n;
+    if (l.k === "sub") return n.replace(/^(?:수도권|지하철)\s*/, "").replace(/^\d+\s+(?=\S)/, "");
+    const m = n.match(/^(간선|지선|광역|마을|순환|급행|직행|좌석|일반)\s*[:：]\s*(.+)$/);
+    if (m) n = m[2] + (/번$/.test(m[2]) ? "" : "번") + " " + m[1];
+    else if (/^[\dA-Z][\d\-A-Z]*$/i.test(n)) n += "번";
+    return n;
+  }
+  function lineColor(l) {
+    const n = String(l.n || "");
+    const t = l.k === "sub" ? LINE_COLORS : l.k === "bus" ? BUS_COLORS : [];
+    const hit = t.find(([re]) => re.test(n));
+    return hit ? hit[1] : css(SEG[l.k] ? SEG[l.k].color : "--m-sub");
+  }
+  // 승차 구간 → 노선 배지
+  const RIDE_K = ["sub", "bus", "rail", "train", "xbus", "air"];
+  function lineChip(l) {
+    const nm = ["sub", "bus"].includes(l.k) ? (lineName(l) || SEG[l.k].name) : (String(l.n || "").replace(/\s*\d\d:\d\d발$/, "").replace(/^(SRT|KTX)[:：].*$/i, "$1") || SEG[l.k].name);
+    return '<span class="ln" style="background:' + lineColor(l) + '">' + esc(nm.slice(0, 16)) + '</span>';
+  }
+  // 승용차 주 경로 → 도로 배지 (고속도로 파랑, 국도 초록, 그 밖의 도로 회색)
+  function roadChips(via) {
+    return via.map(n => {
+      const hw = /고속도로/.test(n), nat = /^국도/.test(n);
+      const t = hw ? n.replace(/고속도로/, "").replace(/선$/, "") + (/지선$/.test(n) ? "" : "") : n.replace(/^국도\s*/, "국도 ");
+      return '<span class="ln" title="' + esc(n) + '" style="background:' + (hw ? "#1d5fb4" : nat ? "#2e7d32" : "#6b7487") + '">' + esc(t) + '</span>';
+    }).join('<span class="gt">›</span>');
+  }
+  const lineChips = legs => legs.filter(l => RIDE_K.includes(l.k)).map(lineChip).join('<span class="gt">›</span>');
+
   // ===== 점심 =====
   const WALK_R = 700, CAR_R = 3000;   // 대중교통: 도보 약 10분 / 승용차: 차로 약 10분
-  let lunchOn = false, lunchPick = {};
+  let lunchOn = false, lunchAfter = false, lunchPick = {};   // lunchOn: 회의 전 점심(출발 시각에 반영), lunchAfter: 회의 후 점심(추천만)
   const lunchMin = () => Math.max(20, +document.getElementById("lunchMin").value || 60);
   const lunchWhere = () => document.getElementById("lunchWhere").value;
   // 내린 곳(역·터미널) 근처에 식당 자료가 없으면(예: 공항) 회의장 근처로 대신 찾음
@@ -622,21 +688,27 @@ button.copy:hover { background: var(--navy) }
     const a = p[optKey] && p[optKey].arrive;
     return a && p.lunch[a] ? a : "venue";
   }
+  // 빨리 나오는 메뉴 (점심 시간이 짧을 때 우선)
+  const QUICK = /국밥|해장국|국수|칼국수|냉면|밀면|막국수|김밥|분식|떡볶이|백반|한식뷔페|뷔페|덮밥|비빔밥|우동|라멘|쌀국수|짜장|짬뽕|중식|돈가스|돈까스|버거|도시락|순두부|설렁탕|곰탕|베이커리/;
   function rankLunch(p, area) {
-    const A = p.lunch[area], radius = travel === "car" ? CAR_R : WALK_R;
-    const budget = lunchBudget();
+    const A = p.lunch[area], car = travel === "car", radius = car ? CAR_R : WALK_R;
+    const budget = lunchBudget(), total = lunchMin(), short = total <= 40;
     const items = A.items.map(([n, cat, dx, dy, rating, blogs, price]) => {
       const dist = Math.round(Math.hypot(dx, dy)), won = parsePrice(price);
-      const inRange = dist <= radius, inBudget = won <= budget;
+      const walk = Math.ceil(dist / 67) + 1, drive = Math.ceil(dist / 400) + 3;
+      // 점심 시간 = 오가는 시간 + 식사 시간. 승용차는 회의장 쪽으로 가는 길에 들르므로 한 번만 더함
+      const move = car ? drive : walk * 2, eat = total - move;
+      const quick = QUICK.test(cat + " " + n), need = quick ? 15 : 25;
+      const inRange = dist <= radius, inBudget = won <= budget, inTime = eat >= need;
       const [local, badge] = LOCALS[n] || [0, ""];
-      // 블로그 글 수와 현지인 언급, 지자체 인증을 함께 반영해 정렬
-      const score = Math.log10(blogs + 1) * 60 + local * 0.5 + (badge ? 30 : 0);
-      return { n, cat, dx, dy, blogs, local, badge, price, won, dist, walk: Math.ceil(dist / 67) + 1, drive: Math.ceil(dist / 400) + 3,
-        inRange, inBudget, ok: inRange && inBudget, why: !inRange ? "범위 밖" : (!inBudget ? "예산 초과" : ""), score };
+      // 블로그 글 수와 현지인 언급, 지자체 인증을 함께 반영해 정렬. 점심 시간이 짧으면 가깝고 빨리 나오는 곳을 앞으로
+      const score = Math.log10(blogs + 1) * 60 + local * 0.5 + (badge ? 30 : 0) + (short ? (quick ? 60 : 0) - move * 4 : 0);
+      return { n, cat, dx, dy, blogs, local, badge, price, won, dist, walk, drive, eat, quick,
+        inRange, inBudget, inTime, ok: inRange && inBudget && inTime, why: !inRange ? "범위 밖" : (!inBudget ? "예산 초과" : (!inTime ? "시간 부족" : "")), score };
     });
     items.sort((a, b) => (b.ok - a.ok) || (b.score - a.score));
     const pick = items.find(i => i.ok && i.n === lunchPick[area]) || items.find(i => i.ok) || null;
-    return { A, items, radius, pick, area, budget };
+    return { A, items, radius, pick, area, budget, total };
   }
   // "1.5만원" → 15000, "9천원" → 9000
   function parsePrice(s) {
@@ -686,7 +758,7 @@ button.copy:hover { background: var(--navy) }
     if (!lunchOn) return { m, lc: null };
     const lc = rankLunch(p, lunchArea(p, optKey));
     if (!lc.pick) return { m, lc };
-    const r = lc.pick, meal = lunchMin();
+    const r = lc.pick, meal = r.eat;
     let post;
     if (lc.area === "venue") {
       const last = m.post[m.post.length - 1];
@@ -741,7 +813,7 @@ button.copy:hover { background: var(--navy) }
 
   function liveCtx(p) {
     const mtg = toMin($("mtg").value || "10:00"), buffer = Math.max(0, +$("buffer").value || 0);
-    return { id: p.id, from: ORIGIN.lat + "," + ORIGIN.lng, date: $("date").value, target: mtg - buffer, travel, lunchOn, meal: lunchOn ? lunchMin() : 0, where: lunchWhere(), budget: lunchBudget(), pick: lunchPick, park: parkSel[p.id] || "" };
+    return { id: p.id, from: ORIGIN.lat + "," + ORIGIN.lng, date: $("date").value, target: mtg - buffer, travel, lunchOn, lunchAfter, meal: lunchOn ? lunchMin() : 0, where: lunchWhere(), budget: lunchBudget(), pick: lunchPick, park: parkSel[p.id] || "", pref: travel === "car" ? $("carPref").value : "" };
   }
   // 필요한 데이터가 준비됐으면 true, 아니면 받아오기 시작하고 false
   function liveReady(p) {
@@ -775,7 +847,7 @@ button.copy:hover { background: var(--navy) }
       LV.base[p.id] = base.options || [];
       LV.note = base.note || (base.source === "kakao" ? "수도권 안 이동이라 카카오 대중교통으로 조회했습니다" : "수도권을 벗어나는 이동이라 TMAP(기차·고속버스 포함)으로 조회했습니다");
       LV.tx = {};
-      if (c.lunchOn) {
+      if (c.lunchOn || c.lunchAfter) {
         for (const o of LV.base[p.id]) {
           const atVenue = c.where === "venue" || !o.main || !o.main.toLat;
           const anchor = atVenue ? venue : { name: o.main.to, lat: o.main.toLat, lng: o.main.toLng };
@@ -784,8 +856,8 @@ button.copy:hover { background: var(--navy) }
           foodsToLunch(p, area, anchor, foods.items || [], atVenue ? "" : p.name + " 방향");
           const lc = rankLunch(p, area);
           let shifted = null;
-          if (lc.pick) {
-            const extra = c.meal + lc.pick.walk * 2;
+          if (c.lunchOn && lc.pick) {
+            const extra = c.meal;   // 점심 시간(오가는 시간 포함)만큼 일찍 도착하도록
             const r = await api("/transit", { from: ORIGIN, to: venue, arriveBy: dateHM(c, c.target - extra), silent: true }).catch(() => ({ options: [] }));
             shifted = (r.options || []).find(x => x.key === o.key) || null;
           }
@@ -797,8 +869,8 @@ button.copy:hover { background: var(--navy) }
       p._parksRaw = parks;
       const pk = parks.find(k => k.name === c.park) || parks[0] || venue;
       const times = []; for (let m = c.target - 8 * 60; m <= c.target - 30; m += 30) if (m >= 0) times.push(hhmm(m));
-      p._car = await api("/car", { from: ORIGIN, to: { lat: pk.lat, lng: pk.lng }, date: c.date, times });
-      if (c.lunchOn) {
+      p._car = await api("/car", { from: ORIGIN, to: { lat: pk.lat, lng: pk.lng }, date: c.date, times, pref: c.pref || "rec" });
+      if (c.lunchOn || c.lunchAfter) {
         const foods = await api("/lunch", { lat: p.lat, lng: p.lng, radius: CAR_R }).catch(() => ({ items: [] }));
         foodsToLunch(p, "venue", venue, foods.items || [], "");
       }
@@ -829,7 +901,7 @@ button.copy:hover { background: var(--navy) }
       if (!parks.length) parks.push({ name: p.name + " 주차장", x: 0, y: -40, lat: p.lat, lng: p.lng, fee: "주변 주차장 정보 없음", spaces: "-" });
       const km = p._car.km || 0;
       p.car = { label: "승용차", cost: Math.round(km * 160 / 100) * 100, from: "사무실", to: p.name, parkMin: 5, parks,
-        curve: (p._car.curve && p._car.curve.length) ? p._car.curve : [["06:00", 120], ["12:00", 120]], future: p._car.future };
+        curve: (p._car.curve && p._car.curve.length) ? p._car.curve : [["06:00", 120], ["12:00", 120]], future: p._car.future, vias: p._car.vias || null };
       const path = (p._car.path && p._car.path.length) ? p._car.path : [[ORIGIN.lat, ORIGIN.lng], [p.lat, p.lng]];
       GEO[p.id].car = { path, stops: [[ORIGIN.name, ORIGIN.lat, ORIGIN.lng], [p.name, p.lat, p.lng]] };
     }
@@ -852,7 +924,7 @@ button.copy:hover { background: var(--navy) }
         const r = lc.pick, raw = (p.lunch[tx.area]._raw || []).find(i => i.n === r.n) || {};
         const ins = [
           { k: "walk", d: r.walk, a: tx.anchor.name, b: r.n, n: "식당까지 도보", coords: [[tx.anchor.lat, tx.anchor.lng], [raw.lat, raw.lng]] },
-          { k: "meal", d: lunchMin(), a: r.n, b: r.n, n: "점심 · " + r.cat, coords: [] },
+          { k: "meal", d: r.eat, a: r.n, b: r.n, n: "점심 · " + r.cat, coords: [] },
           { k: "walk", d: r.walk, a: r.n, b: tx.area === "venue" ? destLabel(p) : tx.anchor.name, n: tx.area === "venue" ? "회의장까지 도보" : "역으로 복귀", coords: [[raw.lat, raw.lng], [tx.anchor.lat, tx.anchor.lng]] }
         ];
         if (tx.area === "venue") legs = legs.concat(ins);
@@ -902,9 +974,34 @@ button.copy:hover { background: var(--navy) }
       const segs = legs && legs.some(l => l.coords && l.coords.length) ? legs.filter(l => l.coords && l.coords.length > 1) : [{ k: "x", coords: path }];
       segs.forEach(l => {
         const pts = l.coords.map(q => new K.LatLng(q[0], q[1])); pts.forEach(pt => bounds.extend(pt));
-        const c = l.k === "x" ? color : css(SEG[l.k] ? SEG[l.k].color : "--m-sub");
-        add(new K.Polyline({ path: pts, strokeWeight: main ? 6 : 4, strokeColor: c, strokeOpacity: main ? .95 : .55, strokeStyle: l.k === "walk" ? "shortdot" : "solid" }));
+        if (l.k === "walk") {
+          // 도보: 초록 점선으로 교통수단과 구분
+          add(new K.Polyline({ path: pts, strokeWeight: main ? 5 : 3, strokeColor: css("--m-walkline"), strokeOpacity: main ? .95 : .5, strokeStyle: "shortdash" }));
+          return;
+        }
+        const c = l.k === "x" ? color : (["sub", "bus"].includes(l.k) ? lineColor(l) : css(SEG[l.k] ? SEG[l.k].color : "--m-sub"));
+        if (main) add(new K.Polyline({ path: pts, strokeWeight: 10, strokeColor: "#ffffff", strokeOpacity: .95 }));   // 흰 테두리
+        add(new K.Polyline({ path: pts, strokeWeight: main ? 6 : 4, strokeColor: c, strokeOpacity: main ? .95 : .55 }));
       });
+      // 승차·하차 표시 (선택한 수단만)
+      if (main && legs) {
+        const RIDE = ["sub", "bus", "rail", "train", "xbus", "air"];
+        const tags = [];
+        legs.forEach(l => {
+          if (!RIDE.includes(l.k) || !l.coords || !l.coords.length) return;
+          const c = ["sub", "bus"].includes(l.k) ? lineColor(l) : css(SEG[l.k].color);
+          const line = ["sub", "bus"].includes(l.k) ? lineName(l) : (l.n || "");
+          tags.push({ q: l.coords[0], txt: (l.a || "") + " 승차", sub: (line || SEG[l.k].name).slice(0, 24), c });
+          tags.push({ q: l.coords[l.coords.length - 1], txt: (l.b || "") + " 하차", sub: "", c });
+        });
+        tags.forEach(t => {
+          const el = '<div style="display:flex;align-items:center;gap:6px;transform:translate(-7px,-7px)">' +
+            '<span style="width:12px;height:12px;border-radius:50%;background:#fff;border:3px solid ' + t.c + ';box-sizing:border-box;flex:none"></span>' +
+            '<span style="background:#fff;border:1.5px solid ' + t.c + ';border-radius:5px;padding:2px 7px;font:700 12px sans-serif;color:#15213a;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.2)">' + esc(t.txt) +
+            (t.sub ? '<span style="font-weight:500;color:#5d6a83"> ' + esc(t.sub) + '</span>' : '') + '</span></div>';
+          add(new K.CustomOverlay({ position: new K.LatLng(t.q[0], t.q[1]), content: el, xAnchor: 0, yAnchor: 0, zIndex: 4 }));
+        });
+      }
     });
     const pin = (lat, lng, label, bg) => add(new K.CustomOverlay({ position: new K.LatLng(lat, lng), yAnchor: 1.4,
       content: '<div style="background:' + bg + ';color:#fff;font:700 12px sans-serif;padding:4px 9px;border-radius:999px;white-space:nowrap">' + esc(label) + '</div>' }));
@@ -915,26 +1012,37 @@ button.copy:hover { background: var(--navy) }
   }
 
   // ----- 사용 통계 배지 (오른쪽 위) -----
+  // 예시 모드(서버 없음)에서는 모양 확인용 예시 숫자를 보여 줌
+  function demoStats() {
+    const rows = [], base = new Date();
+    for (let i = 0; i < 14; i++) {
+      const d = new Date(base.getTime() - i * 864e5), k = d.getFullYear() + String(d.getMonth() + 1).padStart(2, "0") + String(d.getDate()).padStart(2, "0");
+      const v = [12, 9, 15, 7, 0, 0, 11, 14, 8, 10, 6, 0, 0, 13][i];
+      rows.push({ day: k, visits: v, transit: Math.round(v * 0.8), car: Math.round(v * 0.3), tmap: Math.min(10, Math.round(v * 0.6)), tmapCached: Math.round(v * 0.2) });
+    }
+    const sum = f => rows.reduce((a, r) => a + r[f], 0);
+    return { today: rows[0], rows, total: { visits: sum("visits"), transit: sum("transit"), car: sum("car"), tmap: sum("tmap"), tmapCached: sum("tmapCached") }, demo: true };
+  }
   async function loadStats() {
     try {
-      const r = await fetch(CFG.apiBase.replace(/\/$/, "") + "/stats?days=30").then(x => x.json());
+      const r = LIVE ? await fetch(CFG.apiBase.replace(/\/$/, "") + "/stats?days=30").then(x => x.json()) : demoStats();
       const t = r.today || {};
       $("statsBox").hidden = false;
       $("stVisit").textContent = t.visits || 0;
-      $("stTmap").textContent = t.tmap || 0;
-      $("stTmap").classList.toggle("hot", (t.tmap || 0) >= 8);
+
       const rows = (r.rows || []).slice(0, 14);
       const T = r.total || {};
       const fmt = d => String(d || "").replace(/^(\d{4})(\d\d)(\d\d)$/, "$2/$3");
       const over = (r.rows || []).filter(x => (x.tmap || 0) >= 10).length;
       $("statsPanel").innerHTML =
+        '<b>오늘</b><div class="note">방문 ' + (t.visits || 0) + '회 · 대중교통 조회 ' + (t.transit || 0) + '회 · 승용차 조회 ' + (t.car || 0) + '회 · <span' + ((t.tmap || 0) >= 8 ? ' style="color:var(--bad);font-weight:700"' : '') + '>TMAP ' + (t.tmap || 0) + ' / 10건</span></div>' +
         '<b>최근 30일 사용 현황</b>' +
         '<div class="note">방문 ' + (T.visits || 0) + '회 · 대중교통 조회 ' + (T.transit || 0) + '회 · 승용차 조회 ' + (T.car || 0) + '회</div>' +
         '<div class="note">TMAP 실제 호출 ' + (T.tmap || 0) + '건 (저장 결과 재사용 ' + (T.tmapCached || 0) + '건) · 하루 무료 10건을 다 쓴 날 <b>' + over + '일</b></div>' +
         '<div class="note">유료(0.88원/건) 환산: 한 달 약 ' + Math.round((T.tmap || 0) * 0.88).toLocaleString("ko-KR") + '원</div>' +
         '<div class="tbl"><table><thead><tr><th>날짜</th><th style="text-align:right">방문</th><th style="text-align:right">대중교통</th><th style="text-align:right">승용차</th><th style="text-align:right">TMAP</th></tr></thead><tbody>' +
         rows.map(x => '<tr><td class="t">' + fmt(x.day) + '</td><td class="n">' + (x.visits || 0) + '</td><td class="n">' + (x.transit || 0) + '</td><td class="n">' + (x.car || 0) + '</td><td class="n"' + ((x.tmap || 0) >= 10 ? ' style="color:var(--bad);font-weight:700"' : '') + '>' + (x.tmap || 0) + '</td></tr>').join("") +
-        '</tbody></table></div><div class="note">방문은 브라우저당 하루 1회로 셉니다.</div>';
+        '</tbody></table></div><div class="note">방문은 브라우저당 하루 1회로 셉니다.' + (r.demo ? ' <b>(미리보기용 예시 숫자)</b>' : '') + '</div>';
     } catch (e) { /* 통계는 없어도 동작에 지장 없음 */ }
   }
   $("statsBtn").addEventListener("click", () => {
@@ -952,7 +1060,9 @@ button.copy:hover { background: var(--navy) }
       if (!PLACES.some(x => x.id === p.id)) { PLACES.push(p); const o = document.createElement("option"); o.value = p.id; o.textContent = p.name; $("dest").appendChild(o); }
     }
     $("dest").value = p.id; $("qres").innerHTML = ""; $("q").value = p.name;
-    $("dept").value = ""; lunchPick = {}; fillDepts(); condChanged();
+    $("dept").value = ""; lunchPick = {}; fillDepts();
+    const sp = prefMap()[p.name]; $("carPref").value = sp || "rec";
+    condChanged();
   }
   function chooseOrigin(r) {
     ORIGIN = { name: r.name, lat: r.lat, lng: r.lng };
@@ -1038,6 +1148,26 @@ button.copy:hover { background: var(--navy) }
     return { leave: r.dep - preT, legs, walk, total: target - (r.dep - preT) - Math.max(slack, 0), slack, cost: m.cost, transfers: legs.filter(l => ["sub", "rail", "train", "air", "xbus", "bus"].includes(l.k)).length - 1, main: { k: m.main[0], from: m.main[1], to: m.main[2], dep: r.dep, arr: r.arr, label: m.label, book: m.book } };
   }
 
+  // 경로 선호에 맞춘 승용차 자료 (예시 모드는 선호별 예시 경로·소요 배율, 실시간은 서버가 선호를 반영해 줌)
+  function carModel(p) {
+    const pref = $("carPref").value, base = p.car;
+    if (p.live) return { ...base, pref };
+    const R = (base.routes || {})[pref] || (base.routes || {}).rec || { via: null, f: 1 };
+    return { ...base, pref, curve: base.curve.map(([t, v]) => [t, Math.round(v * R.f)]), vias: R.via ? [[base.curve[0][0], R.via]] : null };
+  }
+  // 출발 시각에 맞는 주 경로 (출발 시각마다 길이 달라질 수 있음)
+  function viaAt(m, dep) {
+    if (!m.vias || !m.vias.length || dep == null) return null;
+    let v = m.vias[0][1];
+    m.vias.forEach(([t, x]) => { if (toMin(t) <= dep && x && x.length) v = x; });
+    const names = (v || []).map(x => typeof x === "string" ? x : x.n).filter(Boolean);
+    return names.length ? names : null;
+  }
+  // 장소별 경로 선호 기억 (이 브라우저에만)
+  const PREF_KEY = "kijigo.routePref";
+  const prefMap = () => { try { return JSON.parse(localStorage.getItem(PREF_KEY) || "{}") || {}; } catch (e) { return {}; } };
+  function savePref(name, v) { try { const m = prefMap(); m[name] = v; localStorage.setItem(PREF_KEY, JSON.stringify(m)); } catch (e) {} }
+
   function carTime(dep, curve) {
     const pts = curve.map(([t, v]) => [toMin(t), v]);
     if (dep <= pts[0][0]) return pts[0][1];
@@ -1048,7 +1178,7 @@ button.copy:hover { background: var(--navy) }
     return pts[pts.length - 1][1];
   }
   // 늦지 않는 가장 늦은 출발 시각 (10분 단위)
-  const carTail = (m, r) => m.parkMin + m._pk.walk + (r ? lunchMin() + r.drive : 0);
+  const carTail = (m, r) => m.parkMin + m._pk.walk + (r ? lunchMin() : 0);   // 점심 = 식사 + 식당→회의장 이동
   function carLatest(m, target, r) {
     const tail = carTail(m, r);
     const lo = toMin(m.curve[0][0]), hi = toMin(m.curve[m.curve.length - 1][0]);
@@ -1065,10 +1195,10 @@ button.copy:hover { background: var(--navy) }
     const legs = [];
     let t = best;
     if (r) {
-      legs.push({ k: "car", d: drive, a: m.from, b: r.n, n: "정체 예측 반영", s: t }); t += drive;
-      legs.push({ k: "meal", d: lunchMin(), a: r.n, b: r.n, n: "점심 · " + r.cat, s: t }); t += lunchMin();
+      legs.push({ k: "car", d: drive, a: m.from, b: r.n, n: m._via ? m._via.join(" → ") : "정체 예측 반영", s: t }); t += drive;
+      legs.push({ k: "meal", d: r.eat, a: r.n, b: r.n, n: "점심 · " + r.cat, s: t }); t += r.eat;
       legs.push({ k: "car", d: r.drive, a: r.n, b: park.name, n: "회의장으로 이동", s: t }); t += r.drive;
-    } else { legs.push({ k: "car", d: drive, a: m.from, b: park.name, n: "정체 예측 반영", s: t }); t += drive; }
+    } else { legs.push({ k: "car", d: drive, a: m.from, b: park.name, n: m._via ? m._via.join(" → ") : "정체 예측 반영", s: t }); t += drive; }
     legs.push({ k: "park", d: m.parkMin, a: park.name, b: park.name, n: "주차·정산", s: t }); t += m.parkMin;
     legs.push({ k: "walk", d: park.walk, a: park.name, b: m._dest, n: "주차장에서 도보 " + park.dist + "m", s: t });
     const end = best + drive + tail;
@@ -1077,11 +1207,9 @@ button.copy:hover { background: var(--navy) }
   }
 
   // 조회 상태: 조회를 누르기 전에는 결과를 감추고, 조회 뒤 조건이 바뀌면 '다시 조회' 안내
-  let queried = false, dirty = false;
-  function condChanged() {
-    if (!queried) return;
-    dirty = true; $("staleBar").hidden = false;
-  }
+  let queried = false, dirty = false, MC = null;
+  // 조건을 바꾸면 결과는 그대로 두고, 조회를 다시 누를 때 반영
+  function condChanged() { if (queried) dirty = true; }
   function runQuery() {
     const msg = t => { $("qMsg").textContent = t; };
     const qv = $("q").value.trim();
@@ -1096,7 +1224,7 @@ button.copy:hover { background: var(--navy) }
     }
     if (!$("date").value || !$("mtg").value) { msg("회의 날짜와 시각을 정해 주세요"); return; }
     msg("");
-    queried = true; dirty = false; $("staleBar").hidden = true;
+    queried = true; dirty = false;
     if (LIVE) setTimeout(loadStats, 4000);
     render();
     $("results").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
@@ -1107,7 +1235,7 @@ button.copy:hover { background: var(--navy) }
     if (!queried || !p) return;
     if (p.live && !liveReady(p)) { $("results").hidden = true; return; }   // 실시간 데이터를 받는 중이면 끝난 뒤 다시 그림
     // 지금 그리는 결과는 현재 조건 기준이므로 '다시 조회' 안내를 닫음
-    dirty = false; $("staleBar").hidden = true;
+    dirty = false;
     const mtg = toMin($("mtg").value || "10:00");
     const buffer = Math.max(0, +$("buffer").value || 0);
     const target = mtg - buffer;
@@ -1127,13 +1255,15 @@ button.copy:hover { background: var(--navy) }
     } else {
       // TMAP처럼 출발 시각을 바꿔 가며 비교: 마지노선 / 30분 일찍 / 1시간 일찍
       p.car._pk = parkOf(p); p.car._dest = destLabel(p);
+      MC = carModel(p);
       const lc = lunchOn ? rankLunch(p, "venue") : null;
       const r = lc ? lc.pick : null;
-      const best = carLatest(p.car, target, r);
-      const lo = toMin(p.car.curve[0][0]);
+      const best = carLatest(MC, target, r);
+      const lo = toMin(MC.curve[0][0]);
       [["car0", "늦어도 이때 출발", 0], ["car1", "30분 일찍 출발", 30], ["car2", "1시간 일찍 출발", 60]].forEach(([k, n, early]) => {
         const dep = best === null ? null : (best - early >= lo ? best - early : null);
-        plans[k] = planCarAt(p.car, dep, target, r); plans[k].lc = lc;
+        MC._via = viaAt(MC, dep);
+        plans[k] = planCarAt(MC, dep, target, r); plans[k].lc = lc; plans[k].via = MC._via;
         INFO[k] = { name: n, color: "--m-car", geo: "car",
           risk: early === 0 ? "정체가 예측보다 심하면 늦을 수 있음" : (early === 30 ? "출근 첨두 전 출발로 소요 변동 위험이 줄어듦" : "가장 안전하지만 현지 대기 시간이 김") };
       });
@@ -1157,13 +1287,13 @@ button.copy:hover { background: var(--navy) }
       else if (!isCarMode && k === latest) chip = '<span class="chip ok">가장 늦게 출발</span>';
       else if (!isCarMode && v.slack > 40) chip = '<span class="chip warn">일찍 도착 ' + v.slack + '분</span>';
       const arrive = v.fail ? "" : hhmm(v.leave + v.total);
-      const lunchRow = (!v.fail && v.lc) ? '<dt>점심</dt><dd>' + (v.lc.pick ? esc(v.lc.pick.n) + ' · ' + lunchMin() + '분' : "범위 내 식당 없음") + '</dd>' : "";
+      const lunchRow = (!v.fail && v.lc) ? '<dt>점심</dt><dd>' + (v.lc.pick ? esc(v.lc.pick.n) + ' · 식사 ' + v.lc.pick.eat + '분' : "조건에 맞는 식당 없음") + '</dd>' : "";
       const body = v.fail
         ? '<span class="leave">--:--</span><span class="risk">회의 시각에 맞출 수 없습니다. 전날 이동을 검토하세요.</span>'
         : '<span class="leave">' + hhmm(v.leave) + '<small>사무실 출발</small></span>' +
           (isCarMode
-            ? '<dl><dt>예상 운전</dt><dd>' + dur(v.drive) + '</dd><dt>회의장 도착</dt><dd>' + arrive + '</dd><dt>회의 전 여유</dt><dd>' + (mtg - (v.leave + v.total)) + '분</dd><dt>주차</dt><dd>' + esc(p.car._pk.name) + '</dd>' + lunchRow + '</dl>'
-            : '<dl><dt>총 소요</dt><dd>' + dur(v.total) + '</dd><dt>도보 합계</dt><dd>' + v.walk + '분</dd><dt>환승</dt><dd>' + v.transfers + '회</dd><dt>예상 비용</dt><dd>' + won(v.cost) + '</dd>' + lunchRow + '</dl>') +
+            ? '<dl><dt>예상 운전</dt><dd>' + dur(v.drive) + '</dd>' + (v.via ? '<dt>주 경로</dt><dd class="lines">' + roadChips(v.via) + '</dd>' : '') + '<dt>회의장 도착</dt><dd>' + arrive + '</dd><dt>회의 전 여유</dt><dd>' + (mtg - (v.leave + v.total)) + '분</dd><dt>주차</dt><dd>' + esc(p.car._pk.name) + '</dd>' + lunchRow + '</dl>'
+            : '<dl>' + (v.legs && v.legs.some(l => RIDE_K.includes(l.k)) ? '<dt>노선</dt><dd class="lines">' + lineChips(v.legs) + '</dd>' : '') + '<dt>총 소요</dt><dd>' + dur(v.total) + '</dd><dt>도보 합계</dt><dd>' + v.walk + '분</dd><dt>환승</dt><dd>' + v.transfers + '회</dd><dt>예상 비용</dt><dd>' + won(v.cost) + '</dd>' + lunchRow + '</dl>') +
           '<span class="risk">' + info.risk + '</span>';
       return '<button class="mode" type="button" data-k="' + k + '" aria-pressed="' + (k === selected) + '" style="--c: var(' + info.color + ')"' + (v.fail ? " disabled" : "") + '>' +
         '<span class="top"><span class="name">' + info.name + '</span>' + chip + '</span>' + body + '</button>';
@@ -1174,12 +1304,30 @@ button.copy:hover { background: var(--navy) }
     drawMap(p, plans);
     drawSchema(plans[selected], selected, p);
     drawLegs(plans[selected]);
-    drawLunch(p, plans[selected]);
+    // 회의 후 점심: 출발 계획과 별개로 추천
+    const sv = plans[selected];
+    if (lunchAfter && !sv.fail) {
+      let area = null;
+      if (p.live) { const tx = travel === "car" ? null : LV.tx[selected]; area = tx ? tx.area : (p.lunch && p.lunch.venue ? "venue" : null); }
+      else area = travel === "car" ? "venue" : lunchArea(p, (INFO[selected] || {}).geo);
+      if (area && p.lunch && p.lunch[area]) {
+        const lc = rankLunch(p, area);
+        const end = mtg + Math.max(30, +$("mtgDur").value || 90);
+        let go = lc.pick ? (travel === "car" ? lc.pick.drive : lc.pick.walk) : 0;
+        // 역·터미널 근처에서 먹는 경우: 회의장 → 역까지 되돌아가는 시간(올 때 역 → 회의장 구간)을 더함
+        if (area !== "venue" && sv.legs) {
+          const mi = sv.legs.findIndex(l => ["rail", "train", "xbus", "air"].includes(l.k));
+          if (mi >= 0) go += sv.legs.slice(mi + 1).filter(l => !["slack", "meal"].includes(l.k)).reduce((a, l) => a + l.d, 0);
+        }
+        sv.lcAfter = lc; sv.afterTime = { end, s: end + go, e: end + go + (lc.pick ? lc.pick.eat : lunchMin()) };
+      }
+    }
+    drawLunch(p, sv);
 
     // 승용차 부가 정보
     const showCar = isCarMode && !plans[selected].fail;
     $("carExtra").hidden = !showCar;
-    if (showCar) drawCurve(p.car, plans[selected], target);
+    if (showCar) drawCurve(MC, plans[selected], target);
     drawDest(p, isCarMode);
     drawBooking(p, plans[selected], isCarMode);
 
@@ -1192,8 +1340,14 @@ button.copy:hover { background: var(--navy) }
       lines.push("· " + INFO[k].name + ": " + (v.fail ? "시간 내 불가" : hhmm(v.leave) + " 사무실 출발 → " + hhmm(v.leave + v.total) + " 도착" + (isCarMode ? "" : ", 도보 " + v.walk + "분")));
     });
     const sl = plans[selected];
-    if (!sl.fail && sl.lc && sl.lc.pick) lines.push("· 점심: " + sl.lc.pick.n + " (" + sl.lc.pick.cat + ", " + sl.lc.A.anchor + " " + (travel === "car" ? "차로 " + sl.lc.pick.drive : "도보 " + sl.lc.pick.walk) + "분, " + lunchMin() + "분)");
-    if (!plans[selected].fail) lines.push("→ 선택: " + INFO[selected].name + " / " + plans[selected].legs.filter(l => l.k !== "slack").map(l => SEG[l.k].name).join(" → "));
+    if (!sl.fail && lunchAfter && sl.lcAfter && sl.lcAfter.pick) lines.push("· 회의 후 점심: " + sl.lcAfter.pick.n + " (" + sl.lcAfter.pick.cat + ", " + (sl.afterTime ? hhmm(sl.afterTime.s) + "~" + hhmm(sl.afterTime.e) : "") + ")");
+    if (!sl.fail && sl.lc && sl.lc.pick) lines.push("· 점심: " + sl.lc.pick.n + " (" + sl.lc.pick.cat + ", " + sl.lc.A.anchor + " " + (travel === "car" ? "차로 " + sl.lc.pick.drive : "도보 " + sl.lc.pick.walk) + "분, 식사 " + sl.lc.pick.eat + "분)");
+    if (!plans[selected].fail) {
+      const pl = plans[selected];
+      lines.push("→ 선택: " + INFO[selected].name + " / " + (isCarMode
+        ? (pl.via ? pl.via.join(" → ") : "승용차") + " (" + ({ rec: "추천 경로", time: "최소 시간", dist: "최단 거리", free: "무료도로" }[$("carPref").value]) + ")"
+        : pl.legs.filter(l => l.k !== "slack" && l.k !== "wait").map(l => ["sub", "bus"].includes(l.k) ? (lineName(l) || SEG[l.k].name) : SEG[l.k].name).filter((x, i, a) => x !== a[i - 1]).join(" → ")));
+    }
     $("msg").textContent = lines.join("\n");
   }
 
@@ -1217,9 +1371,10 @@ button.copy:hover { background: var(--navy) }
       s += '<g data-k="' + k + '" style="cursor:pointer">';
       s += '<rect x="' + L + '" y="' + (y + 4) + '" width="' + (W - L - R) + '" height="' + (rowH - 8) + '" fill="transparent"/>';
       v.legs.forEach(l => {
-        const x0 = x(l.s), w = Math.max(1, x(l.s + l.d) - x0), c = css(SEG[l.k].color);
+        const x0 = x(l.s), w = Math.max(1, x(l.s + l.d) - x0), c = ["sub", "bus"].includes(l.k) && l.n ? lineColor(l) : css(SEG[l.k].color);
         const dash = l.k === "walk" ? ' stroke="' + c + '" stroke-width="2" stroke-dasharray="3 3" fill="transparent"' : ' fill="' + c + '"';
         s += '<rect x="' + x0 + '" y="' + (y + 10) + '" width="' + w + '" height="20" rx="3"' + dash + (sel ? "" : ' opacity=".55"') + '><title>' + SEG[l.k].name + ' ' + l.d + '분 (' + hhmm(l.s) + '~' + hhmm(l.s + l.d) + ')</title></rect>';
+        if (w > 34 && ["sub", "bus"].includes(l.k) && l.n) s += '<text x="' + (x0 + w / 2) + '" y="' + (y + 24) + '" font-size="11" fill="#fff" text-anchor="middle" font-weight="700" font-family="IBM Plex Sans KR, sans-serif" pointer-events="none">' + esc(lineName(l).slice(0, Math.floor(w / 11))) + '</text>';
         if (w > 44 && ["rail", "train", "air", "xbus", "car", "meal"].includes(l.k)) s += '<text x="' + (x0 + w / 2) + '" y="' + (y + 24) + '" font-size="11.5" fill="#fff" text-anchor="middle" font-weight="700" font-family="IBM Plex Sans KR, sans-serif" pointer-events="none">' + SEG[l.k].name + ' ' + dur(l.d) + '</text>';
       });
       s += '<text x="' + (x(v.leave) - 4) + '" y="' + (y + 24) + '" font-size="11.5" fill="' + ink + '" text-anchor="end" font-family="IBM Plex Mono, monospace">' + hhmm(v.leave) + '</text>';
@@ -1234,7 +1389,9 @@ button.copy:hover { background: var(--navy) }
     s += "</svg>";
     $("gantt").innerHTML = s;
     $("gantt").querySelectorAll("g[data-k]").forEach(g => g.addEventListener("click", () => { selected = g.dataset.k; render(); }));
-    $("legend").innerHTML = ["walk", "sub", "bus", "rail", "train", "xbus", "air", "car", "park", "meal", "wait", "slack"].filter(k => k !== "meal" || lunchOn).map(k =>
+    // 범례: 막대에 실제로 나온 구간만 (남는 시간은 빼고, 대기는 대중교통에서 나올 때만)
+    const used = new Set(); keys.forEach(k => plans[k].legs.forEach(l => used.add(l.k)));
+    $("legend").innerHTML = ["car", "walk", "sub", "bus", "rail", "train", "xbus", "air", "park", "meal", "wait"].filter(k => used.has(k)).map(k =>
       '<span><i style="background:' + (k === "walk" ? "repeating-linear-gradient(90deg,var(--m-walk) 0 3px,transparent 3px 6px)" : "var(" + SEG[k].color + ")") + '"></i>' + SEG[k].name + '</span>').join("");
   }
 
@@ -1295,11 +1452,33 @@ button.copy:hover { background: var(--navy) }
     const sel = g[selected], stops = sel.stops;
     if (show.includes(selected)) {
       const c = css(INFO[selected].color);
+      // 선택 계획의 승차·하차 지점 이름
+      const RIDE = ["sub", "bus", "rail", "train", "xbus", "air"];
+      const legsSel = (plans[selected] && plans[selected].legs) || [];
+      const norm = t => String(t || "").replace(/역$|터미널$/, "");
+      // 예: "수서역 · 지하철 하차 → KTX 승차", "포항역 · KTX 하차"
+      const tagOf = n => {
+        const on = legsSel.find(l => RIDE.includes(l.k) && norm(l.a) === norm(n));
+        const off = legsSel.find(l => RIDE.includes(l.k) && norm(l.b) === norm(n));
+        const nm = l => (["sub", "bus"].includes(l.k) && l.n ? lineName(l) : SEG[l.k].name);
+        if (on && off) return "· " + nm(off) + " 하차 → " + nm(on) + " 승차";
+        if (on) return "· " + nm(on) + " 승차";
+        if (off) return "· " + nm(off) + " 하차";
+        return "";
+      };
       stops.forEach(([n, la, lo], i) => {
         const [x, y] = P(la, lo);
         if (i === 0 || i === stops.length - 1) return;
-        s += '<circle cx="' + x + '" cy="' + y + '" r="11" fill="' + paper + '" stroke="' + c + '" stroke-width="2.5"/><text x="' + x + '" y="' + (y + 4) + '" font-size="11" font-weight="700" fill="' + c + '" text-anchor="middle" font-family="IBM Plex Mono, monospace">' + i + '</text>';
-        s += '<text x="' + (x + 15) + '" y="' + (y + 4) + '" font-size="12.5" font-weight="700" fill="' + ink + '" stroke="' + paper + '" stroke-width="3" paint-order="stroke">' + esc(n) + '</text>';
+        const tag = tagOf(n);
+        if (tag) {
+          const label = n + " " + tag, w = label.length * 12.5 + 14;
+          s += '<circle cx="' + x + '" cy="' + y + '" r="6" fill="' + paper + '" stroke="' + c + '" stroke-width="3"/>';
+          s += '<rect x="' + (x + 10) + '" y="' + (y - 11) + '" width="' + w + '" height="22" rx="5" fill="' + paper + '" stroke="' + c + '" stroke-width="1.5"/>';
+          s += '<text x="' + (x + 17) + '" y="' + (y + 4.5) + '" font-size="12.5" font-weight="700" fill="' + ink + '">' + esc(label) + '</text>';
+        } else {
+          s += '<circle cx="' + x + '" cy="' + y + '" r="4" fill="' + paper + '" stroke="' + c + '" stroke-width="2"/>';
+          s += '<text x="' + (x + 9) + '" y="' + (y + 4) + '" font-size="11.5" fill="' + muted + '" stroke="' + paper + '" stroke-width="3" paint-order="stroke">' + esc(n) + '</text>';
+        }
       });
     }
     // 출발·도착 핀
@@ -1352,6 +1531,12 @@ button.copy:hover { background: var(--navy) }
         rows: [["출발", hhmm(v.leave) + " 사무실"], ["도착 목표", hhmm(v.leave + v.total)]], link: ["카카오맵 길찾기 ↗", kroute(p)] });
       items.push({ id: "park", t: "주차: " + pk.name, tip: pk.fee + (typeof pk.spaces === "number" ? " · " + pk.spaces + "면" : "") + " · 방문 부서 건물까지 도보 " + pk.walk + "분",
         rows: [["주차장", pk.name]], link: ["주차장 지도 ↗", kmap(pk.name)] });
+    }
+    if (lunchAfter && v.lcAfter && v.lcAfter.pick) {
+      const r = v.lcAfter.pick;
+      items.push({ id: "lunch2", t: "회의 후 점심: " + r.n, tip: "회의가 길어질 수 있으니 예약보다는 도착 후 바로 방문을 권합니다",
+        rows: [["시간", v.afterTime ? hhmm(v.afterTime.s) + "~" + hhmm(v.afterTime.e) : ""], ["메뉴", r.cat + " · " + r.price], ["위치", v.lcAfter.A.anchor + " " + (travel === "car" ? "차로 " + r.drive : "도보 " + r.walk) + "분"]],
+        link: ["카카오맵에서 보기 ↗", kmap(v.lcAfter.A.anchor + " " + r.n)] });
     }
     if (v.lc && v.lc.pick) {
       const r = v.lc.pick, meal = v.legs.find(l => l.k === "meal");
@@ -1514,11 +1699,14 @@ button.copy:hover { background: var(--navy) }
   // ----- 점심 추천 패널 -----
   function drawLunch(p, v) {
     const box = $("lunchBox");
-    box.hidden = !lunchOn || v.fail || !v.lc;
+    const after = lunchAfter && !lunchOn;
+    const lc = after ? v.lcAfter : v.lc, car = travel === "car";
+    box.hidden = !(lunchOn || lunchAfter) || v.fail || !lc;
     if (box.hidden) return;
-    const lc = v.lc, car = travel === "car";
-    $("lunchTitle").textContent = lc.A.anchor + " 주변 점심 추천";
-    $("lunchSub").textContent = (car ? "회의장에서 차로 약 10분(3km) 이내" : "도보 약 10분(700m) 이내") + " · 1인 " + lc.budget.toLocaleString("ko-KR") + "원 이하 · 블로그·현지인 언급이 많은 곳 3곳";
+    $("lunchTitle").textContent = (after ? "회의 끝나고 점심 · " : "회의 전 점심 · ") + lc.A.anchor + " 주변";
+    $("lunchSub").textContent = (after && v.afterTime ? "회의 종료 " + hhmm(v.afterTime.end) + " → 점심 " + hhmm(v.afterTime.s) + "~" + hhmm(v.afterTime.e) + " · " : "") +
+      (car ? "차로 약 10분(3km) 이내" : "도보 약 10분(700m) 이내") + " · 1인 " + lc.budget.toLocaleString("ko-KR") + "원 이하 · 점심 " + lc.total + "분 안에 다녀올 수 있는 곳" +
+      (lc.total <= 40 ? " · 시간이 짧아 가깝고 빨리 나오는 메뉴 우선" : " · 블로그·현지인 언급이 많은 순");
     const inR = lc.items.filter(i => i.ok).slice(0, 3), out = lc.items.filter(i => !i.ok).slice(0, 2);
     const dist = i => car ? "차로 " + i.drive + "분 · " + (i.dist / 1000).toFixed(1) + "km" : "도보 " + i.walk + "분 · " + i.dist + "m";
     // 블로그 후기·지도는 새 탭으로 엶 (지역명 + 식당명으로 검색)
@@ -1531,11 +1719,11 @@ button.copy:hover { background: var(--navy) }
     $("lunchList").innerHTML = (inR.length ? inR.map((i, idx) => {
       const on = lc.pick && lc.pick.n === i.n;
       return '<div class="food' + (on ? " on" : "") + '"><button type="button" class="pick" data-n="' + esc(i.n) + '" aria-pressed="' + on + '">' +
-        '<span class="no">' + (idx + 1) + '</span><span class="fi"><b>' + esc(i.n) + (on ? ' <span class="chip ok">일정에 반영</span>' : "") + '</b>' +
-        '<span>' + esc(i.cat) + ' · ' + esc(i.price) + '</span><span class="st">' + metric(i) + '</span>' + (i.badge ? '<span class="badge">' + esc(i.badge) + '</span>' : '') + '</span>' +
+        '<span class="no">' + (idx + 1) + '</span><span class="fi"><b>' + esc(i.n) + (on ? ' <span class="chip ok">' + (after ? "선택" : "일정에 반영") + '</span>' : "") + '</b>' +
+        '<span>' + esc(i.cat) + ' · ' + esc(i.price) + ' · 식사 ' + i.eat + '분 가능</span><span class="st">' + metric(i) + '</span>' + (i.badge ? '<span class="badge">' + esc(i.badge) + '</span>' : '') + '</span>' +
         '<span class="fd">' + dist(i) + '</span></button>' + links(i) + '</div>';
     }).join("") : '<p class="note">범위 안에 추천할 식당이 없습니다.</p>') +
-    out.map(i => '<div class="food off"><div class="pick"><span class="no">–</span><span class="fi"><b>' + esc(i.n) + '</b><span>' + esc(i.cat) + ' · ' + metric(i) + '</span></span><span class="fd">' + i.why + '<br>' + (i.inBudget ? dist(i) : esc(i.price)) + '</span></div>' + links(i) + '</div>').join("");
+    out.map(i => '<div class="food off"><div class="pick"><span class="no">–</span><span class="fi"><b>' + esc(i.n) + '</b><span>' + esc(i.cat) + ' · ' + metric(i) + '</span></span><span class="fd">' + i.why + '<br>' + (!i.inBudget ? esc(i.price) : !i.inTime ? "식사 " + Math.max(0, i.eat) + "분뿐" : dist(i)) + '</span></div>' + links(i) + '</div>').join("");
     $("lunchList").querySelectorAll("button.pick").forEach(b => b.addEventListener("click", () => { lunchPick[lc.area] = b.dataset.n; render(); }));
     drawLunchMap(lc, inR, out);
   }
@@ -1641,12 +1829,12 @@ button.copy:hover { background: var(--navy) }
     const ink = css("--ink"), muted = css("--muted"), paper = css("--paper");
     let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="경로 도식" xmlns="http://www.w3.org/2000/svg" font-family="IBM Plex Sans KR, sans-serif">';
     legs.forEach((l, i) => {
-      const c = css(SEG[l.k].color), x0 = X(i), x1 = X(i + 1);
+      const c = ["sub", "bus"].includes(l.k) ? lineColor(l) : css(SEG[l.k].color), x0 = X(i), x1 = X(i + 1);
       if (l.k === "walk") s += '<line x1="' + x0 + '" y1="' + y + '" x2="' + x1 + '" y2="' + y + '" stroke="' + c + '" stroke-width="4" stroke-dasharray="2 7" stroke-linecap="round"/>';
       else if (l.k === "air") s += '<line x1="' + x0 + '" y1="' + y + '" x2="' + x1 + '" y2="' + y + '" stroke="' + c + '" stroke-width="4" stroke-dasharray="12 6" stroke-linecap="round"/><text x="' + ((x0 + x1) / 2) + '" y="' + (y + 5) + '" font-size="15" text-anchor="middle">✈</text>';
       else if (l.k === "rail" || l.k === "train") { s += '<line x1="' + x0 + '" y1="' + y + '" x2="' + x1 + '" y2="' + y + '" stroke="' + c + '" stroke-width="12" stroke-linecap="round"/><line x1="' + x0 + '" y1="' + y + '" x2="' + x1 + '" y2="' + y + '" stroke="' + paper + '" stroke-width="3" stroke-dasharray="14 10"/>'; }
       else s += '<line x1="' + x0 + '" y1="' + y + '" x2="' + x1 + '" y2="' + y + '" stroke="' + c + '" stroke-width="9" stroke-linecap="round"/>';
-      const lbl = l.k === "walk" ? "도보 " + l.d + "분" : (l.n || SEG[l.k].name);
+      const lbl = l.k === "walk" ? (l.n === "환승" ? "환승 " : "도보 ") + l.d + "분" : (["sub", "bus"].includes(l.k) ? lineName(l) : l.n) || SEG[l.k].name;
       s += '<text x="' + ((x0 + x1) / 2) + '" y="' + (y - 18) + '" font-size="12.5" font-weight="700" fill="' + c + '" text-anchor="middle">' + esc(lbl) + '</text>';
       if (l.k !== "walk") s += '<text x="' + ((x0 + x1) / 2) + '" y="' + (y - 34) + '" font-size="11.5" fill="' + muted + '" text-anchor="middle">' + SEG[l.k].name + ' · ' + dur(l.d) + '</text>';
     });
@@ -1673,7 +1861,7 @@ button.copy:hover { background: var(--navy) }
     if (v.fail) { $("legs").innerHTML = ""; return; }
     $("legs").innerHTML = v.legs.map(l =>
       "<tr><td>" + (l.a === l.b ? esc(l.a) : esc(l.a) + " → " + esc(l.b)) + (l.n && !["slack"].includes(l.k) ? '<br><span class="note">' + esc(l.n) + '</span>' : "") +
-      '</td><td><span class="dot" style="background:var(' + SEG[l.k].color + ')"></span>' + SEG[l.k].name + '</td><td class="t">' + hhmm(l.s) + '</td><td class="t">' + hhmm(l.s + l.d) + '</td><td class="n">' + dur(l.d) + "</td></tr>").join("");
+      '</td><td>' + (["sub", "bus"].includes(l.k) && l.n && !/^(택시|환승)$/.test(l.n) ? SEG[l.k].name.replace("택시·", "") + ' ' + lineChip(l) : '<span class="dot" style="background:var(' + SEG[l.k].color + ')"></span>' + (l.k === "bus" && l.n === "택시" ? "택시" : SEG[l.k].name)) + '</td><td class="t">' + hhmm(l.s) + '</td><td class="t">' + hhmm(l.s + l.d) + '</td><td class="n">' + dur(l.d) + "</td></tr>").join("");
   }
 
   // ----- 승용차 출발 시각별 소요 곡선 -----
@@ -1701,22 +1889,31 @@ button.copy:hover { background: var(--navy) }
     }
     s += "</svg>";
     $("curve").innerHTML = s;
-    $("curveNote").textContent = plan.fail ? "" : "선택한 계획은 " + hhmm(plan.leave) + " 출발입니다. 빨간 점은 그 시각에 출발하면 회의에 늦는 경우입니다. 출근 첨두에 가까울수록 소요가 늘어납니다.";
+    $("curveNote").textContent = plan.fail ? "" : "선택한 계획은 " + hhmm(plan.leave) + " 출발입니다. 빨간 점은 그 시각에 출발하면 회의에 늦는 경우입니다. 출근 첨두에 가까울수록 소요가 늘어납니다. 카드의 주 경로 배지: 파랑 = 고속도로, 초록 = 국도.";
   }
 
   function syncLunchUI() {
-    $("lunchMin").disabled = !lunchOn; $("lunchBudget").disabled = !lunchOn;    // 승용차는 회의장 근처만 (차로 이동하므로 역 개념 없음)
-    $("lunchWhere").disabled = !lunchOn || travel === "car";
+    $("carPrefWrap").hidden = travel !== "car";
+    const any = lunchOn || lunchAfter;
+    $("mtgDurWrap").hidden = !lunchAfter;
+    $("lunchMin").disabled = !any; $("lunchBudget").disabled = !any;    // 승용차는 회의장 근처만 (차로 이동하므로 역 개념 없음)
+    $("lunchWhere").disabled = !any || travel === "car";
     if (travel === "car") $("lunchWhere").value = "venue";
-    $("lunchNote").textContent = !lunchOn ? "" : (travel === "car" ? "승용차는 회의장 주변 차로 10분 이내에서 찾습니다" : "대중교통은 내린 곳에서 도보 10분 이내만 찾습니다");
+    const am = toMin($("mtg").value || "10:00") < toMin("12:00");
+    $("lunchNote").textContent = !any ? "" :
+      (lunchOn && am ? "오전 회의라면 '회의 끝나고 먹기'를 권합니다 · " : "") +
+      (lunchAfter ? "회의 후 점심은 출발 시각에 영향 없이 추천만 합니다 · " : "") +
+      (lunchMin() <= 40 ? "점심 시간이 짧아 가깝고 빨리 나오는 메뉴(국밥·국수·분식 등) 위주로 추천 · " : "") +
+      (travel === "car" ? "회의장 주변 차로 10분 이내" : "내린 곳(또는 회의장) 도보 10분 이내");
   }
-  $("lunchOn").addEventListener("change", e => {
-    lunchOn = e.target.checked;
-    // 오전 회의에 점심을 넣으면 의미가 없으므로 오후 2시로 맞춤
-    if (lunchOn && toMin($("mtg").value || "10:00") < toMin("13:00")) { $("mtg").value = "14:00"; }
+  $("lunchMode").addEventListener("change", e => {
+    lunchOn = e.target.value === "before"; lunchAfter = e.target.value === "after";
     syncLunchUI(); condChanged();
   });
-  ["lunchMin", "lunchWhere", "lunchBudget"].forEach(id => $(id).addEventListener("input", condChanged));
+  $("mtgDur").addEventListener("input", condChanged);
+  $("carPref").addEventListener("change", () => { const p = place(); if (p) savePref(p.name, $("carPref").value); condChanged(); });
+  $("mtg").addEventListener("input", syncLunchUI);
+  ["lunchMin", "lunchWhere", "lunchBudget"].forEach(id => $(id).addEventListener("input", () => { syncLunchUI(); condChanged(); }));
   // 방문 부서 입력칸의 자동완성 목록 (등록된 부서만)
   function fillDepts() {
     const p = place();
@@ -1725,6 +1922,7 @@ button.copy:hover { background: var(--navy) }
     $("dept").placeholder = list.length ? "예: " + list[0].n : "예: 대중교통과";
   }
   fillDepts();
+  if (!LIVE) loadStats();
   $("dept").addEventListener("input", condChanged);
   // 장소 검색 칸 (출발지 · 회의 장소)
   const goSearch = which => { const v = $(which === "origin" ? "oq" : "q").value.trim(); if (v) searchPlace(v, which); };
@@ -1739,7 +1937,6 @@ button.copy:hover { background: var(--navy) }
   $("oq").addEventListener("input", () => { $("ores").innerHTML = ""; });
   // ===== 조회 =====
   $("goQuery").addEventListener("click", runQuery);
-  $("reQuery").addEventListener("click", runQuery);
   $("dest").value = ""; $("q").value = "";
   $("goBook").addEventListener("click", () => {
     bookOpen = true; render();
