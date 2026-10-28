@@ -4,7 +4,7 @@
 window.KIJIGO_CONFIG = {
   // Firebase Functions 주소. 배포 후 터미널에 나오는 주소 끝에 /api 까지 넣습니다.
   // 예: "https://asia-northeast3-kijigo-xxxx.cloudfunctions.net/api"
-  apiBase: "",
+  apiBase: "https://asia-northeast3-kijigo-fcae3.cloudfunctions.net/api",
 
   // 카카오 JavaScript 키 (지도 표시용). REST 키가 아닙니다.
   // 카카오 개발자 콘솔 > 앱 > 플랫폼 > Web에 GitHub Pages 주소를 등록해야 지도가 뜹니다.
